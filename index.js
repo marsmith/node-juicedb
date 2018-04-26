@@ -37,7 +37,7 @@ exports.getUntappdMenu = function(venue) {
 
     //start request promise
     rp(options)
-    .then(($) => {
+    .then(function ($) {
 
         var beerInfos = [];
 
@@ -90,7 +90,7 @@ exports.getUntappdMenu = function(venue) {
             });
         });    
     })    
-    .catch((err) => {
+    .catch(function (err) {
         console.log(err);
     });
 }
