@@ -104,7 +104,7 @@ exports.instagramByUser = function(user) {
                             //write to database
                             mysql.createConnection(dbInfo).then(function(conn){
                                 connection = conn;
-                                var sql = "INSERT INTO `" + instagramTableName  + "` (beertime,venue,text,imageurl,thumbnailurl) VALUES ('" + new Date().toLocaleString() + "','" + item.user + "','" + item.text + "','" + item.display_url + "','" + item.thumbnail_url + "')  ON DUPLICATE KEY UPDATE thumbnailurl='" + item.thumbnail_url + "'";
+                                var sql = "INSERT INTO `" + instagramTableName  + "` (beertime,venue,text,imageurl,thumbnailurl) VALUES ('" + new Date(item.date * 1000).toLocaleString() + "','" + item.user + "','" + item.text + "','" + item.display_url + "','" + item.thumbnail_url + "')  ON DUPLICATE KEY UPDATE thumbnailurl='" + item.thumbnail_url + "'";
 
                                 //console.log('SQL',sql);
                         
