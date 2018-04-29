@@ -4,7 +4,7 @@ var mysql = require('promise-mysql');
 var request = require('request');
 var Promise = require('bluebird');
 var async   = require('async');
-var dbInfo = require('./dbInfo.js')
+var dbInfo = require('./dbInfo.js');
 
 var untappdTableName = 'untappd';
 var instagramTableName = 'instagram';
@@ -52,7 +52,7 @@ exports.instagramByUser = function(user) {
                                     like_count : post.node.edge_liked_by,
                                     display_url : post.node.display_url,
                                     owner_id : post.node.owner.id,
-                                    date : post.node.taken_at_timestamp,
+                                    date : new Date(post.node.taken_at_timestamp * 1000).toLocaleString(),
                                     thumbnail_url : post.node.thumbnail_src,
                                     thumbnail_resource : post.node.thumbnail_resources
                                 });
@@ -97,7 +97,7 @@ exports.instagramByUser = function(user) {
                             //write to database
                             mysql.createConnection(dbInfo.data).then(function(conn){
                                 connection = conn;
-                                var sql = "INSERT INTO `" + instagramTableName  + "` (beertime,venue,text,imageurl,thumbnailurl) VALUES ('" + new Date(item.date * 1000).toLocaleString() + "','" + item.user + "','" + item.text + "','" + item.display_url + "','" + item.thumbnail_url + "')  ON DUPLICATE KEY UPDATE thumbnailurl='" + item.thumbnail_url + "'";
+                                var sql = "INSERT INTO `" + instagramTableName  + "` (beertime,venue,text,imageurl,thumbnailurl) VALUES ('" + item.date + "','" + item.user + "','" + item.text + "','" + item.display_url + "','" + item.thumbnail_url + "')  ON DUPLICATE KEY UPDATE thumbnailurl='" + item.thumbnail_url + "'";
 
                                 //console.log('SQL',sql);
                         
@@ -140,7 +140,7 @@ exports.instagramByUser = function(user) {
     
         return json;
     };
-}
+};
 
 exports.getUntappdMenu = function(venue) {
     
