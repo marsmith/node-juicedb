@@ -4,15 +4,8 @@ var mysql = require('promise-mysql');
 var request = require('request');
 var Promise = require('bluebird');
 var async   = require('async');
+var dbInfo = require('./dbInfo.js')
 
-var dbInfo = {
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'localjuicefeed'//,
-    //socketPath: '/var/run/mysqld/mysqld.sock'
-
-};
 var untappdTableName = 'untappd';
 var instagramTableName = 'instagram';
 var untappdURL = 'https://untappd.com/v/';
@@ -74,7 +67,7 @@ exports.instagramByUser = function(user) {
                         }
 
                         //create table if it doesnt exist
-                        mysql.createConnection(dbInfo).then(function(conn){
+                        mysql.createConnection(dbInfo.data).then(function(conn){
                             connection = conn;
                             var sql = "CREATE TABLE IF NOT EXISTS `" + instagramTableName + "` (beertime DATETIME,venue TEXT(100),text VARCHAR(500) PRIMARY KEY,imageurl TEXT(200),thumbnailurl TEXT(200))";
                             var result = conn.query(sql);
@@ -87,7 +80,7 @@ exports.instagramByUser = function(user) {
                             console.log(error);
                         });
                         
-                        mysql.createConnection(dbInfo).then(function(conn){   
+                        mysql.createConnection(dbInfo.data).then(function(conn){   
                             connection = conn;
                             var sql = "DELETE FROM `" + instagramTableName + "` WHERE beertime < NOW() - INTERVAL 14 DAY";
                             var result = connection.query(sql);
@@ -102,7 +95,7 @@ exports.instagramByUser = function(user) {
 
                         response.medias.forEach(function (item) {
                             //write to database
-                            mysql.createConnection(dbInfo).then(function(conn){
+                            mysql.createConnection(dbInfo.data).then(function(conn){
                                 connection = conn;
                                 var sql = "INSERT INTO `" + instagramTableName  + "` (beertime,venue,text,imageurl,thumbnailurl) VALUES ('" + new Date(item.date * 1000).toLocaleString() + "','" + item.user + "','" + item.text + "','" + item.display_url + "','" + item.thumbnail_url + "')  ON DUPLICATE KEY UPDATE thumbnailurl='" + item.thumbnail_url + "'";
 
@@ -152,7 +145,7 @@ exports.instagramByUser = function(user) {
 exports.getUntappdMenu = function(venue) {
     
     //create table if it doesnt exist
-    mysql.createConnection(dbInfo).then(function(conn){
+    mysql.createConnection(dbInfo.data).then(function(conn){
         connection = conn;
         var sql = "CREATE TABLE IF NOT EXISTS `" + untappdTableName  + "` (beertime DATETIME,venue TEXT(100),idx INT,name VARCHAR(100) NOT NULL PRIMARY KEY,ABV TEXT(10),IBU TEXT(10),rating TEXT(10),brewery TEXT(100),style TEXT(100),untappdLink TEXT(100),prices TEXT(100))";
         var result = conn.query(sql);
@@ -165,7 +158,7 @@ exports.getUntappdMenu = function(venue) {
         console.log(error);
     });
     
-    mysql.createConnection(dbInfo).then(function(conn){   
+    mysql.createConnection(dbInfo.data).then(function(conn){   
         connection = conn;
         var sql = "DELETE FROM `" + untappdTableName  + "` WHERE beertime < NOW() - INTERVAL 14 DAY";
         var result = connection.query(sql);
@@ -225,7 +218,7 @@ exports.getUntappdMenu = function(venue) {
             beerInfo.prices = prices.join('|');
 
             //check if we have this beer already at this venue
-            mysql.createConnection(dbInfo).then(function(conn){
+            mysql.createConnection(dbInfo.data).then(function(conn){
                 connection = conn;
                 var sql = "SELECT EXISTS(SELECT 1 FROM `" + untappdTableName  + "` WHERE name='" + beerInfo.name + "' AND venue='" + beerInfo.venue + "')";       
                 var result = conn.query(sql);
@@ -257,7 +250,7 @@ exports.getUntappdMenu = function(venue) {
                         beerInfos.push(beerInfo);
 
                         //write to database
-                        mysql.createConnection(dbInfo).then(function(conn){
+                        mysql.createConnection(dbInfo.data).then(function(conn){
                             connection = conn;
                             var sql = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,ABV,IBU,rating,brewery,style,untappdLink,prices) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venue + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.untappdLink + "','" + beerInfo.prices + "') ON DUPLICATE KEY UPDATE idx='" + beerInfo.index + "'";
 
