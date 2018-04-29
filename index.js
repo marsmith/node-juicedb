@@ -265,6 +265,9 @@ exports.getUntappdMenu = function(venue) {
                             //logs out the error
                             console.log(error);
                         });
+                    })
+                    .catch(function (err) {
+                        console.log('There was an error getting the beer details for:',beerInfo.name);
                     });
                 }
             }).catch(function(error){
