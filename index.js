@@ -39,7 +39,7 @@ exports.instagramByUser = function(user) {
                 var edges = data.entry_data.ProfilePage[0].graphql.user.edge_owner_to_timeline_media.edges;
     
                 async.waterfall([
-                    (callback)=>{
+                    function (callback) {
                             var medias = [];
     
                             for (i = 0; i < numInstagramPosts; i++) { 
@@ -67,8 +67,7 @@ exports.instagramByUser = function(user) {
 
                             callback(null, medias);
                     }    
-                ]
-                , (err, results)=>{
+                ], function (err, results) {
                         var response = {
                             total : results.length,
                             medias : results
