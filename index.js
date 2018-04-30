@@ -5,7 +5,7 @@ var request = require('request');
 var Promise = require('bluebird');
 var async   = require('async');
 var { createLogger, format, transports } = require('winston');
-var { combine, timestamp, label, prettyPrint } = format;
+var { combine, timestamp, printf } = format;
 var dbInfo = require('./dbInfo.js');
 
 var untappdTableName = 'untappd';
@@ -16,11 +16,16 @@ var numInstagramPosts = 5;
 dataExp = /window\._sharedData\s?=\s?({.+);<\/script>/;
 var connection;
 
+var logFormat = printf(info => {
+    info.timestamp = new Date().toLocaleString();
+    return `${info.timestamp} ${info.level}: ${info.message}`;
+});
+
 var logger = createLogger({
     level: 'warn',
     format: combine(
         timestamp(),
-        prettyPrint()
+        logFormat
     ),
     transports: [
         new transports.Console(),
