@@ -4,6 +4,8 @@ var mysql = require('promise-mysql');
 var request = require('request');
 var Promise = require('bluebird');
 var async   = require('async');
+var { createLogger, format, transports } = require('winston');
+var { combine, timestamp, label, prettyPrint } = format;
 var dbInfo = require('./dbInfo.js');
 
 var untappdTableName = 'untappd';
@@ -14,7 +16,20 @@ var numInstagramPosts = 5;
 dataExp = /window\._sharedData\s?=\s?({.+);<\/script>/;
 var connection;
 
+var logger = createLogger({
+    level: 'warn',
+    format: combine(
+        timestamp(),
+        prettyPrint()
+    ),
+    transports: [
+        new transports.Console(),
+        new transports.File({ filename: 'combined.log' })
+    ]
+});
+
 exports.instagramByUser = function(user) {
+
     new Promise(function(resolve, reject){
         if (!user) return reject(new Error('Argument "user" must be specified'));
             var options = {
@@ -30,7 +45,9 @@ exports.instagramByUser = function(user) {
             if (data) {
                            
                 var edges = data.entry_data.ProfilePage[0].graphql.user.edge_owner_to_timeline_media.edges;
-    
+                var venue = data.entry_data.ProfilePage[0].graphql.user.full_name;
+                var venueLogo = data.entry_data.ProfilePage[0].graphql.user.profile_pic_url;
+
                 async.waterfall([
                     function (callback) {
                             var medias = [];
@@ -45,17 +62,13 @@ exports.instagramByUser = function(user) {
         
                                 medias.push({
                                     user: user,
-                                    media_id : post.node.id,
-                                    shortcode : post.node.shortcode,
+                                    venue: venue,
+                                    venueLogoURL: venueLogo,
                                     text : text,
-                                    comment_count : post.node.edge_media_to_comment,
-                                    like_count : post.node.edge_liked_by,
-                                    display_url : post.node.display_url,
-                                    owner_id : post.node.owner.id,
-                                    date : new Date(post.node.taken_at_timestamp * 1000).toLocaleString(),
-                                    thumbnail_url : post.node.thumbnail_src,
-                                    thumbnail_resource : post.node.thumbnail_resources
-                                });
+                                    thumbnailURL : post.node.thumbnail_resources[3].src,
+                                    imageURL : post.node.display_url,
+                                     date : new Date(post.node.taken_at_timestamp * 1000).toLocaleString()
+                                  });
                             }
 
                             callback(null, medias);
@@ -69,15 +82,15 @@ exports.instagramByUser = function(user) {
                         //create table if it doesnt exist
                         mysql.createConnection(dbInfo.data).then(function(conn){
                             connection = conn;
-                            var sql = "CREATE TABLE IF NOT EXISTS `" + instagramTableName + "` (beertime DATETIME,venue TEXT(100),text VARCHAR(500) PRIMARY KEY,imageurl TEXT(200),thumbnailurl TEXT(200))";
+                            var sql = "CREATE TABLE IF NOT EXISTS `" + instagramTableName + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY, beertime DATETIME,user TEXT(100),venue TEXT(100),text VARCHAR(500),venueLogoURL TEXT(200),thumbnailURL TEXT(200),imageURL TEXT(200))";
                             var result = conn.query(sql);
                             connection.end();
-                            console.log("Checking instagram for:",user);
+                            logger.info("Checking instagram for:" + user);
                             return result;
                         }).catch(function(error){
                             if (connection && connection.end) connection.end();
                             //logs out the error
-                            console.log(error);
+                            logger.info(error);
                         });
                         
                         mysql.createConnection(dbInfo.data).then(function(conn){   
@@ -85,38 +98,55 @@ exports.instagramByUser = function(user) {
                             var sql = "DELETE FROM `" + instagramTableName + "` WHERE beertime < NOW() - INTERVAL 14 DAY";
                             var result = connection.query(sql);
                             connection.end();
-                            console.log("Instgram posts older than 14 days cleaned up");
+                            logger.info("Instgram posts older than 14 days cleaned up");
                             return result;
                         }).catch(function(error){
                             if (connection && connection.end) connection.end();
                             //logs out the error
-                            console.log(error);
+                            logger.info(error);
                         }); 
 
                         response.medias.forEach(function (item) {
-                            //write to database
+                            //logger.info(item)
+
+                            //check if we have this beer already at this venue
                             mysql.createConnection(dbInfo.data).then(function(conn){
                                 connection = conn;
-                                var sql = "INSERT INTO `" + instagramTableName  + "` (beertime,venue,text,imageurl,thumbnailurl) VALUES ('" + item.date + "','" + item.user + "','" + item.text + "','" + item.display_url + "','" + item.thumbnail_url + "')  ON DUPLICATE KEY UPDATE thumbnailurl='" + item.thumbnail_url + "'";
-
-                                //console.log('SQL',sql);
-                        
+                                var sql = "SELECT * FROM `" + instagramTableName  + "` WHERE user='" + item.user + "' AND text='" + item.text + "'";  
+                                //logger.info('sql:' + sql)     
                                 var result = conn.query(sql);
                                 conn.end();
-                                console.log("Processed instagram:",item.user,item.text);
                                 return result;
+                            }).then(function(rows){
+                                //logger.info('rows' + rows);
+                                //if there are no hits, add it
+                                if (rows.length === 0) {
+                                    //write to database
+                                    mysql.createConnection(dbInfo.data).then(function(conn){
+                                        connection = conn;
+                                        var sql = "INSERT INTO `" + instagramTableName  + "` (beertime,user,venue,text,venueLogoURL,thumbnailURL,imageURL) VALUES ('" + item.date + "','" + item.user + "','" + item.venue + "','" + item.text + "','" + item.venueLogoURL + "','" + item.thumbnailURL + "','" + item.imageURL + "')";
+
+                                        //logger.info('SQL',sql);
+                                
+                                        var result = conn.query(sql);
+                                        conn.end();
+                                        logger.warn("Inserted Instagram item: " + item.user + item.text);
+                                        return result;
+                                    }).catch(function(error){
+                                        if (connection && connection.end) connection.end();
+                                        //logs out the error
+                                        logger.error(error);
+                                    });
+                                }
                             }).catch(function(error){
                                 if (connection && connection.end) connection.end();
                                 //logs out the error
-                                console.log(error);
+                                logger.error(error);
                             });
                         });
 
                         resolve(response)   
-                        //console.log('HERE',results);
-    
-                })
-                
+                });
             }
             else {
                 reject(new Error('Error scraping tag page "' + tag + '"'));
@@ -148,15 +178,15 @@ exports.getUntappdMenu = function(venue) {
     mysql.createConnection(dbInfo.data).then(function(conn){
         connection = conn;
         var sql = "CREATE TABLE IF NOT EXISTS `" + untappdTableName  + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY,beertime DATETIME,venue TEXT(100),idx INT,name VARCHAR(100),brewery TEXT(100),style TEXT(100),ABV TEXT(10),IBU TEXT(10),rating TEXT(10),prices TEXT(100),beerLogoURL TEXT(100),beerUntappdURL TEXT(100),venueUntappdURL TEXT(100),venueUntappdLogoURL TEXT(100))";
-        //console.log(sql);
+        //logger.info(sql);
         var result = conn.query(sql);
         connection.end();
-        console.log("Checking:",venue);
+        logger.info("Checking untappd: " + venue);
         return result;
     }).catch(function(error){
         if (connection && connection.end) connection.end();
         //logs out the error
-        console.log(error);
+        logger.error(error);
     });
     
     mysql.createConnection(dbInfo.data).then(function(conn){   
@@ -164,12 +194,12 @@ exports.getUntappdMenu = function(venue) {
         var sql = "DELETE FROM `" + untappdTableName  + "` WHERE beertime < NOW() - INTERVAL 14 DAY";
         var result = connection.query(sql);
         connection.end();
-        console.log("Beers older than 14 days cleaned up",venue);
+        logger.info("Beers older than 14 days cleaned up for: " + venue);
         return result;
     }).catch(function(error){
         if (connection && connection.end) connection.end();
         //logs out the error
-        console.log(error);
+        logger.error(error);
     });
 
     //loop over venues
@@ -234,14 +264,14 @@ exports.getUntappdMenu = function(venue) {
             mysql.createConnection(dbInfo.data).then(function(conn){
                 connection = conn;
                 var sql = "SELECT * FROM `" + untappdTableName  + "` WHERE idx=" + beerInfo.index + " AND venue='" + beerInfo.venueNameFull + "'";  
-                //console.log('sql:',sql)     
+                //logger.info('sql: ' + sql)     
                 var result = conn.query(sql);
                 conn.end();
                 return result;
             }).then(function(rows){
                 //if there are no hits, add it
                 if (rows.length === 0) {
-                    console.log('Need to add this beer or update index:',beerInfo.name, beerInfo.venueNameFull, beerInfo.index);
+                    logger.info('Need to add this beer or update index: ' + beerInfo.name + beerInfo.venueNameFull + beerInfo.index);
 
                     //write to database
                     mysql.createConnection(dbInfo.data).then(function(conn){
@@ -249,16 +279,16 @@ exports.getUntappdMenu = function(venue) {
 
                         var sql = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "')";
 
-                        if (beerInfo.name === 'Nugget Nectar') console.log('SQL',sql)
+                        //logger.info('SQL: ' + sql)
                 
                         var result = conn.query(sql);
                         conn.end();
-                        console.log("Working on :",beerInfo.venueNameFull, beerInfo.brewery, beerInfo.name);
+                        logger.warn("Added untappd item: " + beerInfo.venueNameFull + beerInfo.brewery + beerInfo.name);
                         return result;
                     }).catch(function(error){
                         if (connection && connection.end) connection.end();
                         //logs out the error
-                        console.log(error);
+                        logger.error(error);
                     });
                 }
 
@@ -271,11 +301,11 @@ exports.getUntappdMenu = function(venue) {
         
                         //chek if we have this entry already
                         if (data.idx === beerInfo.index && data.name === beerInfo.name && data.venue === beerInfo.venueNameFull) {
-                            console.log('Already exists in the DB at this venue at this index:', beerInfo.venueNameFull, data.idx,beerInfo.name);
+                            logger.info('Already exists in the DB at this venue at this index: ' + beerInfo.venueNameFull + data.idx,beerInfo.name);
                         }
                         //check if new beer at this index
                         if (data.idx === beerInfo.index && data.name !== beerInfo.name && data.venue === beerInfo.venueNameFull) {
-                            console.log('New beer at this venue and index:', beerInfo.venueNameFull, beerInfo.index,beerInfo.name);
+                            logger.info('New beer at this venue and index: ' +  beerInfo.venueNameFull + beerInfo.index,beerInfo.name);
 
                             //write to database
                             mysql.createConnection(dbInfo.data).then(function(conn){
@@ -283,16 +313,16 @@ exports.getUntappdMenu = function(venue) {
 
                                 var sql = "UPDATE `" + untappdTableName  + "` SET beertime='" + new Date().toLocaleString() + "',idx='" + beerInfo.index + "',name='" + beerInfo.name + "',brewery='" + beerInfo.brewery + "',style='" + beerInfo.style + "',ABV='" + beerInfo.ABV + "',IBU='" + beerInfo.IBU + "',rating='" + beerInfo.rating + "',prices='" + beerInfo.prices + "',beerLogoURL='" + beerInfo.beerLogoURL + "',beerUntappdURL='" + beerInfo.beerUntappdURL + "' WHERE idx='" + beerInfo.index + "' AND venue='" + beerInfo.venueNameFull + "'";
 
-                                //console.log('SQL',sql);
+                                //logger.info('SQL: ' + sql);
                         
                                 var result = conn.query(sql);
                                 conn.end();
-                                console.log("Processed:",beerInfo.brewery, beerInfo.name);
+                                logger.warn("Updated untappd item: " + beerInfo.venueNameFull + beerInfo.index, beerInfo.name);
                                 return result;
                             }).catch(function(error){
                                 if (connection && connection.end) connection.end();
                                 //logs out the error
-                                console.log(error);
+                                logger.error(error);
                             });
                         }   
                     }
@@ -304,13 +334,13 @@ exports.getUntappdMenu = function(venue) {
                     var foundFlag = false;
                     rows.forEach(function (row) {
                         if (row.name === beerInfo.name) {
-                            console.log('Already exists in the DB at this venue at this index:', beerInfo.venueNameFull, beerInfo.index,beerInfo.name);
+                            logger.info('Already exists in the DB at this venue at this index: ' + beerInfo.venueNameFull + beerInfo.index,beerInfo.name);
                             foundFlag = true;
                         }
        
                     });
                     if (!foundFlag) {
-                        console.log('22222222New beer at this venue (this venue doesnt use indexes):', beerInfo.venueNameFull, beerInfo.index,beerInfo.name);
+                        logger.warn('New beer at this venue (this venue doesnt use indexes): ' + beerInfo.venueNameFull + beerInfo.index,beerInfo.name);
  
                         //write to database
                         // mysql.createConnection(dbInfo.data).then(function(conn){
@@ -318,16 +348,16 @@ exports.getUntappdMenu = function(venue) {
 
                         //     var sql = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "') ON DUPLICATE KEY UPDATE idx='" + beerInfo.index + "'";
 
-                        //     //console.log('SQL',sql)
+                        //     //logger.info('SQL: ' + sql)
                     
                         //     var result = conn.query(sql);
                         //     conn.end();
-                        //     console.log("Processed:",beerInfo.brewery, beerInfo.name);
+                        //     logger.info("Processed: " + beerInfo.brewery + beerInfo.name);
                         //     return result;
                         // }).catch(function(error){
                         //     if (connection && connection.end) connection.end();
                         //     //logs out the error
-                        //     console.log(error);
+                        //     logger.error(error);
                         // });
                     }
                 }
@@ -360,32 +390,32 @@ exports.getUntappdMenu = function(venue) {
 
                 //             var sql = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerUntappdURL,venueNameUntappd,venueUntappdURL) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "')";
 
-                //             //console.log('SQL',sql)
+                //             //logger.info('SQL: ' + sql)
                     
                 //             var result = conn.query(sql);
                 //             conn.end();
-                //             console.log("Processed:",beerInfo.brewery, beerInfo.name);
+                //             logger.info("Processed: " + beerInfo.brewery + beerInfo.name);
                 //             return result;
                 //         }).catch(function(error){
                 //             if (connection && connection.end) connection.end();
                 //             //logs out the error
-                //             console.log(error);
+                //             logger.error(error);
                 //         });
                 //     })
                 //     .catch(function (err) {
-                //         console.log('There was an error getting the beer details for:',beerInfo.name);
+                //         logger.info('There was an error getting the beer details for: ' + beerInfo.name);
                 //     });
                 // }
             }).catch(function(error){
                 if (connection && connection.end) connection.end();
                 //logs out the error
-                console.log(error);
+                logger.error(error);
             });
 
 
         });    
     })    
     .catch(function (err) {
-        console.log('There was an error getting the menu from untappd for:',venue,err);
+        logger.error('There was an error getting the menu from untappd for:',venue,err);
     });
 }
