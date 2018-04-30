@@ -5,4 +5,4 @@ var untappdVenues = ['troy-discount-beverage/385265', 'olivers-beverage-brew-cre
 untappdVenues.forEach(function (item) {
     localjuice.getUntappdMenu(item);
 });
-// //localjuice.getUntappdMenu('troy-discount-beverage/385265')
+//localjuice.getUntappdMenu('olivers-beverage-brew-crew/334214')
