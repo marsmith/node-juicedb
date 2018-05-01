@@ -1,6 +1,6 @@
 var rp = require('request-promise');
 var cheerio = require('cheerio');
-var mysql = require('promise-mysql');
+var mysql = require( 'mysql' );
 var request = require('request');
 var Promise = require('bluebird');
 var async   = require('async');
@@ -23,7 +23,7 @@ var logFormat = printf(info => {
 });
 
 var logger = createLogger({
-    level: 'warn',
+    level: 'info',
     format: combine(
         timestamp(),
         logFormat
@@ -34,228 +34,60 @@ var logger = createLogger({
     ]
 });
 
-exports.instagramByUser = function(user) {
+class Database {
+    constructor( config ) {
+        this.connection = mysql.createConnection( config );
+    }
+    query( sql, args ) {
+        return new Promise( ( resolve, reject ) => {
+            this.connection.query( sql, args, ( err, rows ) => {
+                if ( err )
+                    return reject( err );
+                resolve( rows );
+            } );
+        } );
+    }
+    close() {
+        return new Promise( ( resolve, reject ) => {
+            this.connection.end( err => {
+                if ( err )
+                    return reject( err );
+                resolve();
+            } );
+        } );
+    }
+}
 
-    new Promise(function(resolve, reject){
-        if (!user) return reject(new Error('Argument "user" must be specified'));
-            var options = {
-            url: instagramURL + user,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/600.1.3 (KHTML, like Gecko) Version/8.0 Mobile/12A4345d Safari/600.1.4'
-            }
-            };
-        request(options, function(err, response, body){
-            if (err) return reject(err);
-    
-            var data = scrape(body)
-            if (data) {
-                           
-                var edges = data.entry_data.ProfilePage[0].graphql.user.edge_owner_to_timeline_media.edges;
-                var venue = data.entry_data.ProfilePage[0].graphql.user.full_name;
-                var venueLogo = data.entry_data.ProfilePage[0].graphql.user.profile_pic_url;
-
-                async.waterfall([
-                    function (callback) {
-                            var medias = [];
-    
-                            for (i = 0; i < numInstagramPosts; i++) { 
-                                var post = edges[i];
-        
-                                //clean up hashtags and mentions from text
-                                var regexp1 = /\#\w\w+\s?/g;
-                                var regexp2 = /\@\w\w+\s?/g;
-                                var text = post.node.edge_media_to_caption.edges[0].node.text.replace(regexp1, '').replace(regexp2, '').split();
-        
-                                medias.push({
-                                    user: user,
-                                    venue: venue,
-                                    venueLogoURL: venueLogo,
-                                    text : text,
-                                    thumbnailURL : post.node.thumbnail_resources[3].src,
-                                    imageURL : post.node.display_url,
-                                     date : new Date(post.node.taken_at_timestamp * 1000).toLocaleString()
-                                  });
-                            }
-
-                            callback(null, medias);
-                    }    
-                ], function (err, results) {
-                        var response = {
-                            total : results.length,
-                            medias : results
-                        }
-
-                        //create table if it doesnt exist
-                        mysql.createConnection(dbInfo.data).then(function(conn){
-                            connection = conn;
-                            var sql = "CREATE TABLE IF NOT EXISTS `" + instagramTableName + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY, beertime DATETIME,user TEXT(100),venue TEXT(100),text VARCHAR(500),venueLogoURL TEXT(200),thumbnailURL TEXT(200),imageURL TEXT(200))";
-                            var result = conn.query(sql);
-                            connection.end();
-                            logger.info("Checking instagram for:" + user);
-                            return result;
-                        }).catch(function(error){
-                            if (connection && connection.end) connection.end();
-                            //logs out the error
-                            logger.info(error);
-                        });
-                        
-                        mysql.createConnection(dbInfo.data).then(function(conn){   
-                            connection = conn;
-                            var sql = "DELETE FROM `" + instagramTableName + "` WHERE beertime < NOW() - INTERVAL 14 DAY";
-                            var result = connection.query(sql);
-                            connection.end();
-                            logger.info("Instgram posts older than 14 days cleaned up");
-                            return result;
-                        }).catch(function(error){
-                            if (connection && connection.end) connection.end();
-                            //logs out the error
-                            logger.info(error);
-                        }); 
-
-                        response.medias.forEach(function (item) {
-                            //logger.info(item)
-
-                            //check if we have this beer already at this venue
-                            mysql.createConnection(dbInfo.data).then(function(conn){
-                                connection = conn;
-                                var sql = "SELECT * FROM `" + instagramTableName  + "` WHERE user='" + item.user + "' AND text='" + item.text + "'";  
-                                //logger.info('sql:' + sql)     
-                                var result = conn.query(sql);
-                                conn.end();
-                                return result;
-                            }).then(function(rows){
-                                //logger.info('rows' + rows);
-                                //if there are no hits, add it
-                                if (rows.length === 0) {
-                                    //write to database
-                                    mysql.createConnection(dbInfo.data).then(function(conn){
-                                        connection = conn;
-                                        var sql = "INSERT INTO `" + instagramTableName  + "` (beertime,user,venue,text,venueLogoURL,thumbnailURL,imageURL) VALUES ('" + item.date + "','" + item.user + "','" + item.venue + "','" + item.text + "','" + item.venueLogoURL + "','" + item.thumbnailURL + "','" + item.imageURL + "')";
-
-                                        //logger.info('SQL',sql);
-                                
-                                        var result = conn.query(sql);
-                                        conn.end();
-                                        logger.warn("Inserted Instagram item: " + item.user + item.text);
-                                        return result;
-                                    }).catch(function(error){
-                                        if (connection && connection.end) connection.end();
-                                        //logs out the error
-                                        logger.error(error);
-                                    });
-                                }
-                            }).catch(function(error){
-                                if (connection && connection.end) connection.end();
-                                //logs out the error
-                                logger.error(error);
-                            });
-                        });
-
-                        resolve(response)   
-                });
-            }
-            else {
-                reject(new Error('Error scraping tag page "' + tag + '"'));
-            }
-        })
-    });
-       
-    
-    //get instagram page data
-    var scrape = function(html) {
-        try {
-            var dataString = html.match(dataExp)[1];
-            var json = JSON.parse(dataString);
-        }
-        catch(e) {
-            if (process.env.NODE_ENV != 'production') {
-                console.error('The HTML returned from instagram was not suitable for scraping');
-            }
-            return null
-        }
-    
-        return json;
-    };
+Database.execute = function( config, callback ) {
+    var database = new Database( config );
+    return callback( database ).then(
+        result => database.close().then( () => result ),
+        err => database.close().then( () => { throw err; } )
+    );
 };
 
-exports.getUntappdUser = function(user) {
+exports.getUntappdMenu = function(venue) {
 
-    //create table if it doesnt exist
-    mysql.createConnection(dbInfo.data).then(function(conn){
-        connection = conn;
-        var sql = "CREATE TABLE IF NOT EXISTS `" + untappdTableName  + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY,beertime DATETIME,venue TEXT(100),idx INT,name VARCHAR(100),brewery TEXT(100),style TEXT(100),ABV TEXT(10),IBU TEXT(10),rating TEXT(10),prices TEXT(100),beerLogoURL TEXT(100),beerUntappdURL TEXT(100),venueUntappdURL TEXT(100),venueUntappdLogoURL TEXT(100))";
-        //logger.info(sql);
-        var result = conn.query(sql);
-        connection.end();
-        logger.info("Checking untappd: " + user);
-        return result;
-    }).catch(function(error){
-        if (connection && connection.end) connection.end();
-        //logs out the error
-        logger.error(error);
-    });
-    
-    mysql.createConnection(dbInfo.data).then(function(conn){   
-        connection = conn;
-        var sql = "DELETE FROM `" + untappdTableName  + "` WHERE beertime < NOW() - INTERVAL 14 DAY";
-        var result = connection.query(sql);
-        connection.end();
-        logger.info("Beers older than 14 days cleaned up for: " + untappdTableName);
-        return result;
-    }).catch(function(error){
-        if (connection && connection.end) connection.end();
-        //logs out the error
-        logger.error(error);
-    });
+    return new Promise(function(resolve, reject){ 
 
-    //loop over checkins
-    var options = {
-        uri: untappdUserURL + user,
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/600.1.3 (KHTML, like Gecko) Version/8.0 Mobile/12A4345d Safari/600.1.4'
-        },
-        transform: function (body) {
-            return cheerio.load(body);
-        }
-    };
+        //create table if it doesn't exist
+        var createTableSQL = "CREATE TABLE IF NOT EXISTS `" + untappdTableName  + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY,beertime DATETIME,venue TEXT(100),idx INT,name VARCHAR(100),brewery TEXT(100),style TEXT(100),ABV TEXT(10),IBU TEXT(10),rating TEXT(10),prices TEXT(100),beerLogoURL TEXT(100),beerUntappdURL TEXT(100),venueUntappdURL TEXT(100),venueUntappdLogoURL TEXT(100))";
 
-    //start request promise
-    rp(options)
-    .then(function ($) {
-        var beerInfos = [];
+        //cleanup old records
+        var cleanupSQL = "DELETE FROM `" + untappdTableName  + "` WHERE beertime < NOW() - INTERVAL 14 DAY";
 
-        //get venue details
-        var venueNameFull = $('.user-info').find('.info').find('h1').text().trim().replace("'","");
-        var venueUntappdURL = untappdUserURL + user;
-        var venueUntappdLogoURL = $('.user-info').find('.avatar-holder').find('img').attr('src');
+        Database.execute( dbInfo.data,
+            //first query checks if database exists if not creates it
+            database => database.query(createTableSQL)
+            //second query cleans up old records in database
+            .then( rows => {
+                return database.query(cleanupSQL);
+            } )
+        ).then( () => {
 
-        console.log('user:',venueNameFull)
-
-        $('#main-stream').find('.item').each(function(i,item){
-
-            var beerInfo = {};            
-            beerInfo.venueNameFull = venueNameFull;
-            beerInfo.venueUntappdURL = venueUntappdURL;
-            beerInfo.venueUntappdLogoURL = venueUntappdLogoURL;
-
-            beerInfo.beertime = $(item).find('.checkin').find('.feedback').find('.bottom').find('a.time.timezoner.track-click').text();
-            beerInfo.beerUntappdURL = 'https://untappd.com' + $(item).find('.checkin').find('.top').find('a').attr('href');
-            beerInfo.beerLogoURL = $(item).find('.checkin').find('.top').find('a').find('img').attr('data-original');
-
-            //get checkin details
-            beerInfo.prices = $(item).find('.checkin').find('.comment-text').text().trim();
-
-            var checkinData = [];
-            $(item).find('.checkin').find('.top').find('p').find('a').each(function(i,item) {
-                checkinData.push($(item).text());
-            });
-            beerInfo.name = checkinData[1];
-            beerInfo.brewery = checkinData[2];
-            beerInfo.index = 0;
-
-            //go to beer page to get rating
+            //loop over venues in untappd venue request
             var options = {
-                uri: beerInfo.beerUntappdURL,
+                uri: untappdVenueURL + venue,
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/600.1.3 (KHTML, like Gecko) Version/8.0 Mobile/12A4345d Safari/600.1.4'
                 },
@@ -267,356 +99,445 @@ exports.getUntappdUser = function(user) {
             //start request promise
             rp(options)
             .then(function ($) {
-                beerInfo.rating = parseFloat($('.details').find('.rating').find('.num').text().replace(/\(|\)/g, ""));
-                beerInfo.ABV = $('.details').find('.abv').text().replace('ABV','').trim();
-                beerInfo.IBU = $('.details').find('.ibu').text().replace(' IBU','').trim();
-                if (beerInfo.IBU === 'No') beerInfo.IBU = 'N/A';
-                beerInfo.style = $('.top').find('.name').find('.style').text();
-                beerInfos.push(beerInfo);
-                //console.log(beerInfo)
 
-                //check if we have this beer already at this venue
-                mysql.createConnection(dbInfo.data).then(function(conn){
-                    connection = conn;
-                    var sql = "SELECT * FROM `" + untappdTableName  + "` WHERE beertime='" + new Date(beerInfo.beertime).toLocaleString() + "' AND venue='" + beerInfo.venueNameFull + "'";  
-                    //console.log('sql: ', sql);
-                    var result = conn.query(sql);
-                    conn.end();
-                    return result;
-                }).then(function(rows){
-                    //if there are no hits, add it
-                    if (rows.length === 0) {
-                        logger.info('Need to add this beer or update index: ' + beerInfo.name + beerInfo.venueNameFull + beerInfo.index);
+                var beerInfos = [];
 
-                        //write to database
-                        mysql.createConnection(dbInfo.data).then(function(conn){
-                            connection = conn;
+                //get venue details
+                var venueNameFull = $('.header-details').find('.venue-name').find('h1').text().trim().replace("'","");
+                var venueUntappdURL = 'https://untappd.com' + $('.header-details').find('.logo').find('a').attr('href');
+                var venueUntappdLogoURL = $('.header-details').find('.logo').find('img').attr('src');
 
-                            var sql = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL) VALUES ('" + new Date(beerInfo.beertime).toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "')";
+                var connection = mysql.createConnection(dbInfo.data);
 
-                            logger.info('SQL: ' + sql)
-                    
-                            var result = conn.query(sql);
-                            conn.end();
-                            logger.warn("Added untappd item: " + beerInfo.venueNameFull + beerInfo.brewery + beerInfo.name);
-                            return result;
-                        }).catch(function(error){
-                            if (connection && connection.end) connection.end();
-                            //logs out the error
-                            logger.error(error);
+                //make sure we avoid the 'On deck' menu section
+                var beerList = [];
+                $('.menu-section').each(function(i,menuSection){
+                    var category = $(menuSection).find('.menu-section-header').find('h4').clone().children().remove().end().text().trim();
+
+                    if (category !== "On Deck") {
+                        $(menuSection).find('.menu-section-list').find('li').each(function(i,beer){
+                            beerList.push(beer);
                         });
                     }
-
-                    //this beer at this index needs to be updated
-                    if (rows.length === 1) {
-
-                        if (1===1) {
-                            
-                            var data = JSON.parse(JSON.stringify(rows[0]));
-            
-                            //chek if we have this entry already
-                            if (data.idx === beerInfo.index && data.name === beerInfo.name && data.venue === beerInfo.venueNameFull) {
-                                logger.info('Already exists in the DB at this venue at this index: ' + beerInfo.venueNameFull + data.idx,beerInfo.name);
-                            }
-                            //check if new beer at this index
-                            if (data.idx === beerInfo.index && data.name !== beerInfo.name && data.venue === beerInfo.venueNameFull) {
-                                logger.info('New beer at this venue and index: ' +  beerInfo.venueNameFull + beerInfo.index,beerInfo.name);
-
-                                //write to database
-                                mysql.createConnection(dbInfo.data).then(function(conn){
-                                    connection = conn;
-
-                                    var sql = "UPDATE `" + untappdTableName  + "` SET beertime='" + new Date().toLocaleString() + "',idx='" + beerInfo.index + "',name='" + beerInfo.name + "',brewery='" + beerInfo.brewery + "',style='" + beerInfo.style + "',ABV='" + beerInfo.ABV + "',IBU='" + beerInfo.IBU + "',rating='" + beerInfo.rating + "',prices='" + beerInfo.prices + "',beerLogoURL='" + beerInfo.beerLogoURL + "',beerUntappdURL='" + beerInfo.beerUntappdURL + "' WHERE idx='" + beerInfo.index + "' AND venue='" + beerInfo.venueNameFull + "'";
-
-                                    //logger.info('SQL: ' + sql);
-                            
-                                    var result = conn.query(sql);
-                                    conn.end();
-                                    logger.warn("Updated untappd item: " + beerInfo.venueNameFull + beerInfo.index, beerInfo.name);
-                                    return result;
-                                }).catch(function(error){
-                                    if (connection && connection.end) connection.end();
-                                    //logs out the error
-                                    logger.error(error);
-                                });
-                            }   
-                        }
-                    }
-                    //otherwise need to loop
-                    if (rows.length > 1) {
-                        var foundFlag = false;
-                        rows.forEach(function (row) {
-                            if (row.name === beerInfo.name) {
-                                logger.info('Already exists in the DB at this venue at this index: ' + beerInfo.venueNameFull + beerInfo.index,beerInfo.name);
-                                foundFlag = true;
-                            }
-        
-                        });
-                        if (!foundFlag) {
-                            logger.warn('New beer at this venue (this venue doesnt use indexes): ' + beerInfo.venueNameFull + beerInfo.index,beerInfo.name);
-                        }
-                    }
-                }).catch(function(error){
-                    if (connection && connection.end) connection.end();
-                    //logs out the error
-                    logger.error(error);
                 });
+                
+                Promise.each(beerList,function (beer) {
+        
+                    var beerInfo = {};            
+                    beerInfo.venueNameFull = venueNameFull;
+                    beerInfo.venueUntappdURL = venueUntappdURL;
+                    beerInfo.venueUntappdLogoURL = venueUntappdLogoURL;
 
-            })
+                    //console.log(beerInfo);
+
+                    //get beer details
+                    var $beerDetailsH5 = $(beer).find('.beer-details').find('h5');
+                    var $beerDetailsH6 = $(beer).find('.beer-details').find('h6');
+                    
+                    //check for beers that dont have a number
+                    if ($beerDetailsH5.find('a').text().indexOf('.') != -1) {
+                        beerInfo.name = $beerDetailsH5.find('a').text().split('.')[1].trim().replace("'","");
+                        beerInfo.index = parseInt($beerDetailsH5.find('a').text().split('.')[0]);
+                    }
+                    else {
+                        beerInfo.name = $beerDetailsH5.find('a').text().trim().replace("'","");
+                        beerInfo.index = 0;
+                    }
+                    beerInfo.beerLogoURL = $(beer).find('.beer-label').find('img').attr('src');
+                    var beerDetails = $beerDetailsH6.find('span').text().split('•');
+                    beerInfo.ABV = beerDetails[0].replace('ABV','').trim();
+                    beerInfo.IBU = beerDetails[1].replace('IBU','').trim();
+                    beerInfo.brewery = beerDetails[2].trim().replace("'","");
+                    beerInfo.style = $beerDetailsH5.find('em').text().replace("'","");
+                    if ($beerDetailsH6.find('span').last().attr('class')) beerInfo.rating = (parseFloat($beerDetailsH6.find('span').last().attr('class').split('rating xsmall r')[1].trim())/100).toFixed(2);
+                    else beerInfo.rating = 'N/A';
+                    beerInfo.beerUntappdURL = 'https://untappd.com' + $beerDetailsH5.find('a').attr('href');
+                    var prices = [];
+                    $(beer).find('.beer-prices').find('p').each(function(i,item){
+                        prices.push($(item).text().trim());
+                    });
+                    beerInfo.prices = prices.join('|');
+                    beerInfos.push(beerInfo);
+
+                }).then(function(){
+                    console.log('Found ' + beerInfos.length + ' items for ' + beerInfos[0].venueNameFull);
+            
+                    async.each(beerInfos, function (beerInfo, callback) {
+                            
+                        var checkRecordsSQL = "SELECT * FROM `" + untappdTableName  + "` WHERE idx=" + beerInfo.index + " AND venue='" + beerInfo.venueNameFull + "'";
+                        //console.log('SQL: ' + checkRecordsSQL);
+
+                        connection.query(checkRecordsSQL, function(err, rows, fields){
+                            if(!err){
+                                //console.log(JSON.stringify(rows.length));
+            
+                                if (rows.length === 0) {
+                                    logger.info('Need to add this beer or update index: ' + beerInfo.name + beerInfo.venueNameFull + beerInfo.index);
+                    
+                                    var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "')";
+                    
+                                    //console.log('SQL: ' + insertBeerSQL);
+                                    connection.query(insertBeerSQL, function(err, rows, fields){
+                                        if(!err){
+                                            logger.warn("Added untappd item: " + beerInfo.venueNameFull + beerInfo.brewery + beerInfo.name);
+                                            callback(null);
+                                        } else {
+                                            console.log("Error while performing Query");
+                                            callback(err);
+                                        }
+                                    });
+                                
+                                }
+                                //this beer at this index needs to be updated
+                                if (rows.length === 1) {
+                    
+                                    var data = JSON.parse(JSON.stringify(rows[0]));
+                    
+                                    //chek if we have this entry already
+                                    if (data.idx === beerInfo.index && data.name === beerInfo.name && data.venue === beerInfo.venueNameFull) {
+                                        logger.info('Already exists in the DB at this venue at this index: ' + beerInfo.venueNameFull + data.idx + beerInfo.name);
+                                        callback(null);
+                                    }
+                                    //check if new beer at this index
+                                    if (data.idx === beerInfo.index && data.name !== beerInfo.name && data.venue === beerInfo.venueNameFull) {
+                                        logger.info('New beer at this venue and index: ' +  beerInfo.venueNameFull + beerInfo.index,beerInfo.name);
+                    
+                                        var updateBeerSQL = "UPDATE `" + untappdTableName  + "` SET beertime='" + new Date().toLocaleString() + "',idx='" + beerInfo.index + "',name='" + beerInfo.name + "',brewery='" + beerInfo.brewery + "',style='" + beerInfo.style + "',ABV='" + beerInfo.ABV + "',IBU='" + beerInfo.IBU + "',rating='" + beerInfo.rating + "',prices='" + beerInfo.prices + "',beerLogoURL='" + beerInfo.beerLogoURL + "',beerUntappdURL='" + beerInfo.beerUntappdURL + "' WHERE idx='" + beerInfo.index + "' AND venue='" + beerInfo.venueNameFull + "'";
+                    
+                                        //console.log('SQL: ' + updateBeerSQL);
+                                        logger.warn("Updated untappd item: " + beerInfo.venueNameFull + beerInfo.index, beerInfo.name);
+                                        results.push("Updated untappd item: " + beerInfo.venueNameFull + beerInfo.brewery + beerInfo.name);
+
+                                        connection.query(updateBeerSQ, function(err, rows, fields){
+                                            if(!err){
+                                                console.log("inserted row");
+                                                callback(null);
+                                            } else {
+                                                console.log("Error while performing Query");
+                                                callback(err);
+                                            };
+                                        });
+                                    }   
+                                }
+                                //otherwise need to loop
+                                if (rows.length > 1) {
+                                    var foundFlag = false;
+                                    rows.forEach(function (row) {
+                                        if (row.name === beerInfo.name) {
+                                            logger.info('Multiple results with this index at this venue: ' + beerInfo.venueNameFull + beerInfo.index + beerInfo.name);
+                                            foundFlag = true;
+                                            callback(null);
+                                        }
+                                    });
+                                    if (!foundFlag) {
+                                        logger.warn('New beer at this venue (this venue doesnt use indexes): ' + beerInfo.venueNameFull + beerInfo.index,beerInfo.name); 
+                                    }
+                                    }
+
+                            } else {
+                                logger.error(err);
+                                callback(err);
+                            }
+                        });
+                    }, function(err){
+                        if(err){
+                            logger.error(err);
+                        }else{
+                            //console.log('finally done');
+                            connection.end();
+                            resolve(beerInfos);
+                        }
+                    });   
+                });
+            })        
             .catch(function (err) {
-                logger.error('There was an error getting the user from untappd for: ' + user);
+                logger.error('There was an error getting the menu from untappd for:',venue);
             });
-        });
-    }).catch(function (err) {
-        logger.error('There was an error getting the user from untappd for: ' +  user);
+        
+
+        } ).catch( err => {
+            console.log('there was an error',err)
+        } );
     });
 };
 
-exports.getUntappdMenu = function(venue) {
+exports.getUntappdUser = function(user) {
 
-    //create table if it doesnt exist
-    mysql.createConnection(dbInfo.data).then(function(conn){
-        connection = conn;
-        var sql = "CREATE TABLE IF NOT EXISTS `" + untappdTableName  + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY,beertime DATETIME,venue TEXT(100),idx INT,name VARCHAR(100),brewery TEXT(100),style TEXT(100),ABV TEXT(10),IBU TEXT(10),rating TEXT(10),prices TEXT(100),beerLogoURL TEXT(100),beerUntappdURL TEXT(100),venueUntappdURL TEXT(100),venueUntappdLogoURL TEXT(100))";
-        //logger.info(sql);
-        var result = conn.query(sql);
-        connection.end();
-        logger.info("Checking untappd: " + venue);
-        return result;
-    }).catch(function(error){
-        if (connection && connection.end) connection.end();
-        //logs out the error
-        logger.error(error);
+    return new Promise(function(resolve, reject){ 
+
+        //create table if it doesn't exist
+        var createTableSQL = "CREATE TABLE IF NOT EXISTS `" + untappdTableName  + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY,beertime DATETIME,venue TEXT(100),idx INT,name VARCHAR(100),brewery TEXT(100),style TEXT(100),ABV TEXT(10),IBU TEXT(10),rating TEXT(10),prices TEXT(100),beerLogoURL TEXT(100),beerUntappdURL TEXT(100),venueUntappdURL TEXT(100),venueUntappdLogoURL TEXT(100))";
+
+        //cleanup old records
+        var cleanupSQL = "DELETE FROM `" + untappdTableName  + "` WHERE beertime < NOW() - INTERVAL 14 DAY";
+
+        Database.execute( dbInfo.data,
+            //first query checks if database exists if not creates it
+            database => database.query(createTableSQL)
+            //second query cleans up old records in database
+            .then( rows => {
+                return database.query(cleanupSQL);
+            } )
+        ).then( () => {
+
+            //loop over checkins
+            var options = {
+                uri: untappdUserURL + user,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/600.1.3 (KHTML, like Gecko) Version/8.0 Mobile/12A4345d Safari/600.1.4'
+                },
+                transform: function (body) {
+                    return cheerio.load(body);
+                }
+            };
+
+            //start request promise
+            rp(options)
+            .then(function ($) {
+                var beerInfos = [];
+
+                //get venue details
+                var venueNameFull = $('.user-info').find('.info').find('h1').text().trim().replace("'","");
+                var venueUntappdURL = untappdUserURL + user;
+                var venueUntappdLogoURL = $('.user-info').find('.avatar-holder').find('img').attr('src');
+
+                var connection = mysql.createConnection(dbInfo.data);
+
+                var beerList = [];
+                $('#main-stream').find('.item').each(function(i,beer){
+                    beerList.push(beer);
+                });
+                        
+                Promise.each(beerList,function (beer) {
+  
+                    var beerInfo = {};            
+                    beerInfo.venueNameFull = venueNameFull;
+                    beerInfo.venueUntappdURL = venueUntappdURL;
+                    beerInfo.venueUntappdLogoURL = venueUntappdLogoURL;
+
+                    beerInfo.beertime = $(beer).find('.checkin').find('.feedback').find('.bottom').find('a.time.timezoner.track-click').text();
+                    beerInfo.beerUntappdURL = 'https://untappd.com' + $(beer).find('.checkin').find('.top').find('a').attr('href');
+                    beerInfo.beerLogoURL = $(beer).find('.checkin').find('.top').find('a').find('img').attr('data-original');
+
+                    //get checkin details
+                    beerInfo.prices = $(beer).find('.checkin').find('.comment-text').text().trim();
+
+                    var checkinData = [];
+                    $(beer).find('.checkin').find('.top').find('p').find('a').each(function(i,item) {
+                        checkinData.push($(item).text());
+                    });
+                    //console.log('checkin:',checkinData)
+                    beerInfo.name = checkinData[1];
+                    beerInfo.brewery = checkinData[2];
+                    beerInfo.index = 0;
+                    beerInfos.push(beerInfo);
+
+                }).then(function(){
+                    console.log('Found ' + beerInfos.length + ' items for ' + beerInfos[0].venueNameFull);
+
+                    async.each(beerInfos, function (beerInfo, callback) {
+                        //console.log(beerInfo)
+
+                        var checkRecordsSQL = "SELECT * FROM `" + untappdTableName  + "` WHERE beertime='" + new Date(beerInfo.beertime).toLocaleString() + "' AND venue='" + beerInfo.venueNameFull + "'";  
+                        //console.log('SQL: ' + checkRecordsSQL);
+
+                        connection.query(checkRecordsSQL, function(err, rows, fields){
+                            if(!err){
+        
+                                //if there are no hits, add it
+                                if (rows.length === 0) {
+                                    logger.info('Need to add this beer or update index: ' + beerInfo.name + beerInfo.venueNameFull + beerInfo.index);
+
+                                    //go to beer page to get rating
+                                    var options = {
+                                        uri: beerInfo.beerUntappdURL,
+                                        headers: {
+                                            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/600.1.3 (KHTML, like Gecko) Version/8.0 Mobile/12A4345d Safari/600.1.4'
+                                        },
+                                        transform: function (body) {
+                                            return cheerio.load(body);
+                                        }
+                                    };
+
+                                    //start request promise
+                                    rp(options)
+                                    .then(function ($) {
+                                        beerInfo.rating = parseFloat($('.details').find('.rating').find('.num').text().replace(/\(|\)/g, ""));
+                                        beerInfo.ABV = $('.details').find('.abv').text().replace('ABV','').trim();
+                                        beerInfo.IBU = $('.details').find('.ibu').text().replace(' IBU','').trim();
+                                        if (beerInfo.IBU === 'No') beerInfo.IBU = 'N/A';
+                                        beerInfo.style = $('.top').find('.name').find('.style').text();
+                                        
+                                        var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL) VALUES ('" + new Date(beerInfo.beertime).toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "')";
+                
+                                        connection.query(insertBeerSQL, function(err, rows, fields){
+                                            if(!err){
+                                                logger.warn("Added untappd item: " + beerInfo.venueNameFull + beerInfo.brewery + beerInfo.name);
+                                                callback(null);
+                                            } else {
+                                                console.log("Error while performing Query");
+                                                callback(err);
+                                            }
+                                        });
+                                    })
+                                    .catch(function (err) {
+                                        logger.error('There was an error getting the user from untappd for: ' + user);
+                                    });
+                                }
+                                //otherwise 
+                                else {
+                                    logger.info('Untappd user item already exists: ' + beerInfo.venueNameFull + beerInfo.brewery + beerInfo.name);
+                                    callback(null);
+                                }
+                            } else {
+                                logger.error(err);
+                                callback(err);
+                            }
+
+                        });
+                    }, function(err){
+                        if(err){
+                            logger.error(err);
+                        }else{
+                            console.log('finally done');
+                            connection.end();
+                            resolve(beerInfos);
+                        }
+                    });
+                });
+
+        
+            }).catch(function (err) {
+                logger.error('There was an error getting the user from untappd for: ' +  user);
+            });
+        }).catch( err => {
+            console.log('there was an error',err)
+        });
     });
+};
+
+exports.instagramByUser = function(user) {
+
+    return new Promise(function(resolve, reject){
+        if (!user) return reject(new Error('Argument "user" must be specified'));
+
+        var options = {
+            url: instagramURL + user,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/600.1.3 (KHTML, like Gecko) Version/8.0 Mobile/12A4345d Safari/600.1.4'
+            }
+        };
+        
+        request(options, function(err, response, body){
+            if (err) return reject(err);
     
-    mysql.createConnection(dbInfo.data).then(function(conn){   
-        connection = conn;
-        var sql = "DELETE FROM `" + untappdTableName  + "` WHERE beertime < NOW() - INTERVAL 14 DAY";
-        var result = connection.query(sql);
-        connection.end();
-        logger.info("Beers older than 14 days cleaned up for: " + venue);
-        return result;
-    }).catch(function(error){
-        if (connection && connection.end) connection.end();
-        //logs out the error
-        logger.error(error);
-    });
+            var dataString = body.match(dataExp)[1];
+            var data = JSON.parse(dataString);
+            if (data) {
+                           
+                var edges = data.entry_data.ProfilePage[0].graphql.user.edge_owner_to_timeline_media.edges;
+                var venue = data.entry_data.ProfilePage[0].graphql.user.full_name;
+                var venueLogo = data.entry_data.ProfilePage[0].graphql.user.profile_pic_url;
 
-    //loop over venues
-    var options = {
-        uri: untappdVenueURL + venue,
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/600.1.3 (KHTML, like Gecko) Version/8.0 Mobile/12A4345d Safari/600.1.4'
-        },
-        transform: function (body) {
-            return cheerio.load(body);
-        }
-    };
+                async.waterfall([
+                    function (callback) {
+                        var medias = [];
 
-    //start request promise
-    rp(options)
-    .then(function ($) {
+                        for (i = 0; i < numInstagramPosts; i++) { 
+                            var post = edges[i];
+    
+                            //clean up hashtags and mentions from text
+                            var regexp1 = /\#\w\w+\s?/g;
+                            var regexp2 = /\@\w\w+\s?/g;
+                            var text = post.node.edge_media_to_caption.edges[0].node.text.replace(regexp1, '').replace(regexp2, '').split();
+    
+                            medias.push({
+                                user: user,
+                                venue: venue,
+                                venueLogoURL: venueLogo,
+                                text : text,
+                                thumbnailURL : post.node.thumbnail_resources[3].src,
+                                imageURL : post.node.display_url,
+                                    date : new Date(post.node.taken_at_timestamp * 1000).toLocaleString()
+                                });
+                        }
 
-        var beerInfos = [];
+                        callback(null, medias);
+                    }    
+                ], function (err, results) {
+                        var response = {
+                            total : results.length,
+                            medias : results
+                        };
 
-        //get venue details
-        var venueNameFull = $('.header-details').find('.venue-name').find('h1').text().trim().replace("'","");
-        var venueUntappdURL = 'https://untappd.com' + $('.header-details').find('.logo').find('a').attr('href');
-        var venueUntappdLogoURL = $('.header-details').find('.logo').find('img').attr('src');
+                        var createTableSQL = "CREATE TABLE IF NOT EXISTS `" + instagramTableName + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY, beertime DATETIME,user TEXT(100),venue TEXT(100),text VARCHAR(500),venueLogoURL TEXT(200),thumbnailURL TEXT(200),imageURL TEXT(200))";
 
-        $('.menu-section-list').find('li').each(function(i,beer){
+                        var cleanupSQL = "DELETE FROM `" + instagramTableName + "` WHERE beertime < NOW() - INTERVAL 14 DAY";
 
-            var beerInfo = {};            
-            beerInfo.venueNameFull = venueNameFull;
-            beerInfo.venueUntappdURL = venueUntappdURL;
-            beerInfo.venueUntappdLogoURL = venueUntappdLogoURL;
+                        Database.execute( dbInfo.data,
+                            //first query checks if database exists if not creates it
+                            database => database.query(createTableSQL)
+                            //second query cleans up old records in database
+                            .then( rows => {
+                                return database.query(cleanupSQL);
+                            } )
+                        ).then( () => {
 
-            //get beer details
-            var $beerDetailsH5 = $(beer).find('.beer-details').find('h5');
-            var $beerDetailsH6 = $(beer).find('.beer-details').find('h6');
-            
-            //check for beers that dont have a number
-            if ($beerDetailsH5.find('a').text().indexOf('.') != -1) {
-                beerInfo.name = $beerDetailsH5.find('a').text().split('.')[1].trim().replace("'","");
-                beerInfo.index = parseInt($beerDetailsH5.find('a').text().split('.')[0]);
+                            var connection = mysql.createConnection(dbInfo.data);
+                            async.each(results, function (item, callback) {
+
+                                var checkRecordsSQL = "SELECT * FROM `" + instagramTableName  + "` WHERE user='" + item.user + "' AND text='" + item.text + "'"; 
+                                connection.query(checkRecordsSQL, function(err, rows, fields){
+                                    if(!err){
+        
+                                        //if there are no hits, add it
+                                        if (rows.length === 0) {
+
+                                            //write to database
+                                            var insertPostSQL = "INSERT INTO `" + instagramTableName  + "` (beertime,user,venue,text,venueLogoURL,thumbnailURL,imageURL) VALUES ('" + item.date + "','" + item.user + "','" + item.venue + "','" + item.text + "','" + item.venueLogoURL + "','" + item.thumbnailURL + "','" + item.imageURL + "')";
+
+                                            //logger.info('SQL',insertPostSQL);
+                                            connection.query(insertPostSQL, function(err, rows, fields){
+                                                if(!err){
+                                                    logger.warn("Inserted Instagram item: " + item.user + item.text);
+                                                    callback(null);
+                                                } else {
+                                                    console.log("Error while performing Query");
+                                                    callback(err);
+                                                }
+                                            });
+                                        }
+                                        //otherwise 
+                                        else {
+                                            logger.info('This instagram post already exists: ' + item.user + item.text);
+                                            callback(null);
+                                        }
+                                    } else {
+                                        logger.error(err);
+                                        callback(err);
+                                    }
+                                });
+
+                            
+                            }, function(err){
+                                if(err){
+                                    logger.error(err);
+                                }else{
+                                    console.log('finally done');
+                                    connection.end();
+                                    resolve(response); 
+                                }
+                            }); 
+
+                        }).catch( err => {
+                            console.log('there was an error',err)
+                        });
+                 
+                });
             }
             else {
-                beerInfo.name = $beerDetailsH5.find('a').text().trim().replace("'","");
-                beerInfo.index = 0;
+                reject(new Error('Error scraping tag page "' + tag + '"'));
             }
-            beerInfo.beerLogoURL = $(beer).find('.beer-label').find('img').attr('src');
-            var beerDetails = $beerDetailsH6.find('span').text().split('•');
-            beerInfo.ABV = beerDetails[0].replace('ABV','').trim();
-            beerInfo.IBU = beerDetails[1].replace('IBU','').trim();
-            beerInfo.brewery = beerDetails[2].trim().replace("'","");
-            beerInfo.style = $beerDetailsH5.find('em').text().replace("'","");
-            if ($beerDetailsH6.find('span').last().attr('class')) beerInfo.rating = (parseFloat($beerDetailsH6.find('span').last().attr('class').split('rating xsmall r')[1].trim())/100).toFixed(2);
-            else beerInfo.rating = 'N/A';
-            beerInfo.beerUntappdURL = 'https://untappd.com' + $beerDetailsH5.find('a').attr('href');
-            var prices = [];
-            $(beer).find('.beer-prices').find('p').each(function(i,item){
-                prices.push($(item).text().trim());
-            });
-            beerInfo.prices = prices.join('|');
-
-
-            //check if we have this beer already at this venue
-            mysql.createConnection(dbInfo.data).then(function(conn){
-                connection = conn;
-                var sql = "SELECT * FROM `" + untappdTableName  + "` WHERE idx=" + beerInfo.index + " AND venue='" + beerInfo.venueNameFull + "'";  
-                //logger.info('sql: ' + sql)     
-                var result = conn.query(sql);
-                conn.end();
-                return result;
-            }).then(function(rows){
-                //if there are no hits, add it
-                if (rows.length === 0) {
-                    logger.info('Need to add this beer or update index: ' + beerInfo.name + beerInfo.venueNameFull + beerInfo.index);
-
-                    //write to database
-                    mysql.createConnection(dbInfo.data).then(function(conn){
-                        connection = conn;
-
-                        var sql = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "')";
-
-                        //logger.info('SQL: ' + sql)
-                
-                        var result = conn.query(sql);
-                        conn.end();
-                        logger.warn("Added untappd item: " + beerInfo.venueNameFull + beerInfo.brewery + beerInfo.name);
-                        return result;
-                    }).catch(function(error){
-                        if (connection && connection.end) connection.end();
-                        //logs out the error
-                        logger.error(error);
-                    });
-                }
-
-                //this beer at this index needs to be updated
-                if (rows.length === 1) {
-
-                    if (1===1) {
-                        
-                        var data = JSON.parse(JSON.stringify(rows[0]));
-        
-                        //chek if we have this entry already
-                        if (data.idx === beerInfo.index && data.name === beerInfo.name && data.venue === beerInfo.venueNameFull) {
-                            logger.info('Already exists in the DB at this venue at this index: ' + beerInfo.venueNameFull + data.idx,beerInfo.name);
-                        }
-                        //check if new beer at this index
-                        if (data.idx === beerInfo.index && data.name !== beerInfo.name && data.venue === beerInfo.venueNameFull) {
-                            logger.info('New beer at this venue and index: ' +  beerInfo.venueNameFull + beerInfo.index,beerInfo.name);
-
-                            //write to database
-                            mysql.createConnection(dbInfo.data).then(function(conn){
-                                connection = conn;
-
-                                var sql = "UPDATE `" + untappdTableName  + "` SET beertime='" + new Date().toLocaleString() + "',idx='" + beerInfo.index + "',name='" + beerInfo.name + "',brewery='" + beerInfo.brewery + "',style='" + beerInfo.style + "',ABV='" + beerInfo.ABV + "',IBU='" + beerInfo.IBU + "',rating='" + beerInfo.rating + "',prices='" + beerInfo.prices + "',beerLogoURL='" + beerInfo.beerLogoURL + "',beerUntappdURL='" + beerInfo.beerUntappdURL + "' WHERE idx='" + beerInfo.index + "' AND venue='" + beerInfo.venueNameFull + "'";
-
-
-                                //logger.info('SQL: ' + sql);
-                        
-                                var result = conn.query(sql);
-                                conn.end();
-                                logger.warn("Updated untappd item: " + beerInfo.venueNameFull + beerInfo.index, beerInfo.name);
-                                return result;
-                            }).catch(function(error){
-                                if (connection && connection.end) connection.end();
-                                //logs out the error
-                                logger.error(error);
-                            });
-                        }   
-                    }
-
-          
-                }
-                //otherwise need to loop
-                if (rows.length > 1) {
-                    var foundFlag = false;
-                    rows.forEach(function (row) {
-                        if (row.name === beerInfo.name) {
-                            logger.info('Already exists in the DB at this venue at this index: ' + beerInfo.venueNameFull + beerInfo.index,beerInfo.name);
-                            foundFlag = true;
-                        }
-       
-                    });
-                    if (!foundFlag) {
-                        logger.warn('New beer at this venue (this venue doesnt use indexes): ' + beerInfo.venueNameFull + beerInfo.index,beerInfo.name);
- 
-                        //write to database
-                        // mysql.createConnection(dbInfo.data).then(function(conn){
-                        //     connection = conn;
-
-                        //     var sql = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beeruntappdVenueURL,venueuntappdVenueURL,venueUntappdLogoURL) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beeruntappdVenueURL + "','" + beerInfo.venueuntappdVenueURL + "','" + beerInfo.venueUntappdLogoURL  + "') ON DUPLICATE KEY UPDATE idx='" + beerInfo.index + "'";
-
-                        //     //logger.info('SQL: ' + sql)
-                    
-                        //     var result = conn.query(sql);
-                        //     conn.end();
-                        //     logger.info("Processed: " + beerInfo.brewery + beerInfo.name);
-                        //     return result;
-                        // }).catch(function(error){
-                        //     if (connection && connection.end) connection.end();
-                        //     //logs out the error
-                        //     logger.error(error);
-                        // });
-                    }
-                }
-
-
-                //otherwise we need to get some new data
-                // else {
-                //     //go to beer page to get rating
-                //     var options = {
-                //         uri: beerInfo.untappdLink,
-                //         headers: {
-                //             'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/600.1.3 (KHTML, like Gecko) Version/8.0 Mobile/12A4345d Safari/600.1.4'
-                //         },
-                //         transform: function (body) {
-                //             return cheerio.load(body);
-                //         }
-                //     };
-
-                //     //start request promise
-                //     rp(options)
-                //     .then(function ($) {
-
-                //         beerInfo.rating = $('.details > .rating > .num').text().replace(/"/g, "").replace(/'/g, "").replace(/\(|\)/g, "");
-                //         if (beerInfo.rating === 'N/A')
-                //         beerInfos.push(beerInfo);
-
-                //         //write to database
-                //         mysql.createConnection(dbInfo.data).then(function(conn){
-                //             connection = conn;
-
-                //             var sql = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beeruntappdVenueURL,venueNameUntappd,venueuntappdVenueURL) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beeruntappdVenueURL + "','" + beerInfo.venueuntappdVenueURL + "','" + beerInfo.venueUntappdLogoURL  + "')";
-
-                //             //logger.info('SQL: ' + sql)
-                    
-                //             var result = conn.query(sql);
-                //             conn.end();
-                //             logger.info("Processed: " + beerInfo.brewery + beerInfo.name);
-                //             return result;
-                //         }).catch(function(error){
-                //             if (connection && connection.end) connection.end();
-                //             //logs out the error
-                //             logger.error(error);
-                //         });
-                //     })
-                //     .catch(function (err) {
-                //         logger.info('There was an error getting the beer details for: ' + beerInfo.name);
-                //     });
-                // }
-            }).catch(function(error){
-                if (connection && connection.end) connection.end();
-                //logs out the error
-                logger.error(error);
-            });
-
-
-        });    
-    })    
-    .catch(function (err) {
-        logger.error('There was an error getting the menu from untappd for:',venue);
+        });
     });
-}
+};
