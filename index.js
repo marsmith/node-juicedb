@@ -451,7 +451,7 @@ exports.instagramByUser = function(user) {
                                 //clean up hashtags and mentions from text
                                 var regexp1 = /\#\w\w+\s?/g;
                                 var regexp2 = /\@\w\w+\s?/g;
-                                var text = post.node.edge_media_to_caption.edges[0].node.text.replace(regexp1, '').replace(regexp2, '').split();
+                                var text = post.node.edge_media_to_caption.edges[0].node.text.split();
         
                                 medias.push({
                                     user: user,
