@@ -242,6 +242,7 @@ exports.getUntappdMenu = function(venue) {
                     }, function(err){
                         if(err){
                             logger.error(err);
+                            connection.end();
                         }else{
                             //console.log('finally done');
                             connection.end();
@@ -398,6 +399,7 @@ exports.getUntappdUser = function(user) {
                     }, function(err){
                         if(err){
                             logger.error(err);
+                            connection.end();
                         }else{
                             console.log('finally done');
                             connection.end();
@@ -445,23 +447,25 @@ exports.instagramByUser = function(user) {
 
                         for (i = 0; i < numInstagramPosts; i++) { 
                             var post = edges[i];
-    
-                            //clean up hashtags and mentions from text
-                            var regexp1 = /\#\w\w+\s?/g;
-                            var regexp2 = /\@\w\w+\s?/g;
-                            var text = post.node.edge_media_to_caption.edges[0].node.text.replace(regexp1, '').replace(regexp2, '').split();
-    
-                            medias.push({
-                                user: user,
-                                venue: venue,
-                                venueLogoURL: venueLogo,
-                                text : text,
-                                thumbnailURL : post.node.thumbnail_resources[3].src,
-                                imageURL : post.node.display_url,
-                                    date : new Date(post.node.taken_at_timestamp * 1000).toLocaleString()
-                                });
-                        }
 
+                            if (post.node.edge_media_to_caption.edges[0]) {
+
+                                //clean up hashtags and mentions from text
+                                var regexp1 = /\#\w\w+\s?/g;
+                                var regexp2 = /\@\w\w+\s?/g;
+                                var text = post.node.edge_media_to_caption.edges[0].node.text.replace(regexp1, '').replace(regexp2, '').split();
+        
+                                medias.push({
+                                    user: user,
+                                    venue: venue.replace(/'/g, ""),
+                                    venueLogoURL: venueLogo,
+                                    text : text[0].replace(/[\u0800-\uFFFF]/g, '').replace(/\n/g,' ').replace(/'/g, ""),
+                                    thumbnailURL : post.node.thumbnail_resources[3].src,
+                                    imageURL : post.node.display_url,
+                                        date : new Date(post.node.taken_at_timestamp * 1000).toLocaleString()
+                                });
+                            }
+                        }
                         callback(null, medias);
                     }    
                 ], function (err, results) {
@@ -470,7 +474,7 @@ exports.instagramByUser = function(user) {
                             medias : results
                         };
 
-                        var createTableSQL = "CREATE TABLE IF NOT EXISTS `" + instagramTableName + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY, beertime DATETIME,user TEXT(100),venue TEXT(100),text VARCHAR(500),venueLogoURL TEXT(200),thumbnailURL TEXT(200),imageURL TEXT(200))";
+                        var createTableSQL = "CREATE TABLE IF NOT EXISTS `" + instagramTableName + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY, beertime DATETIME,user TEXT(100),venue TEXT(100),text VARCHAR(2200) COLLATE utf8_general_ci,venueLogoURL TEXT(200),thumbnailURL TEXT(200),imageURL TEXT(200))";
 
                         var cleanupSQL = "DELETE FROM `" + instagramTableName + "` WHERE beertime < NOW() - INTERVAL 14 DAY";
 
@@ -486,23 +490,26 @@ exports.instagramByUser = function(user) {
                             var connection = mysql.createConnection(dbInfo.data);
                             async.each(results, function (item, callback) {
 
-                                var checkRecordsSQL = "SELECT * FROM `" + instagramTableName  + "` WHERE user='" + item.user + "' AND text='" + item.text + "'"; 
+                                var checkRecordsSQL = "SELECT * FROM `" + instagramTableName  + "` WHERE user='" + item.user + "' AND beertime='" + item.date + "'"; 
                                 connection.query(checkRecordsSQL, function(err, rows, fields){
                                     if(!err){
         
                                         //if there are no hits, add it
                                         if (rows.length === 0) {
 
+                                            //console.log('text check:\n',item.text,'\n')
+
                                             //write to database
                                             var insertPostSQL = "INSERT INTO `" + instagramTableName  + "` (beertime,user,venue,text,venueLogoURL,thumbnailURL,imageURL) VALUES ('" + item.date + "','" + item.user + "','" + item.venue + "','" + item.text + "','" + item.venueLogoURL + "','" + item.thumbnailURL + "','" + item.imageURL + "')";
 
-                                            //logger.info('SQL',insertPostSQL);
+                                            //console.log('SQL', insertPostSQL);
+
                                             connection.query(insertPostSQL, function(err, rows, fields){
                                                 if(!err){
                                                     logger.warn("Inserted Instagram item: " + item.user + item.text);
                                                     callback(null);
                                                 } else {
-                                                    console.log("Error while performing Query");
+                                                    console.log("Error while performing Query",err);
                                                     callback(err);
                                                 }
                                             });
@@ -521,7 +528,8 @@ exports.instagramByUser = function(user) {
                             
                             }, function(err){
                                 if(err){
-                                    logger.error(err);
+                                    logger.error('HERE',err);
+                                    connection.end();
                                 }else{
                                     console.log('finally done');
                                     connection.end();
