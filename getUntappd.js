@@ -4,17 +4,17 @@ var untappdVenues = ['troy-discount-beverage/385265', 'olivers-beverage-brew-cre
 
 var untappdUsers = ['AlbanyAleandOyster','FranklinAlleySocialClub'];
 
-untappdVenues.forEach(function (item) {
-    localjuice.getUntappdMenu(item).then(function(result){
-        console.log('Finished ' + item);
-    })
-    .catch(function(err){
-        console.log('there was an error');
-    });
-});
+// untappdVenues.forEach(function (item) {
+//     localjuice.getUntappdMenu(item).then(function(result){
+//         console.log('Finished ' + item);
+//     })
+//     .catch(function(err){
+//         console.log('there was an error');
+//     });
+// });
 
 //for testing
-// localjuice.getUntappdMenu('hunters-on-jay/2265376')
+localjuice.getUntappdMenu('the-ruck/1797');
 
 untappdUsers.forEach(function (item) {
     localjuice.getUntappdUser(item).then(function(result){

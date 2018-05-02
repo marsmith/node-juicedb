@@ -204,13 +204,11 @@ exports.getUntappdMenu = function(venue) {
                     
                                         var updateBeerSQL = "UPDATE `" + untappdTableName  + "` SET beertime='" + new Date().toLocaleString() + "',idx='" + beerInfo.index + "',name='" + beerInfo.name + "',brewery='" + beerInfo.brewery + "',style='" + beerInfo.style + "',ABV='" + beerInfo.ABV + "',IBU='" + beerInfo.IBU + "',rating='" + beerInfo.rating + "',prices='" + beerInfo.prices + "',beerLogoURL='" + beerInfo.beerLogoURL + "',beerUntappdURL='" + beerInfo.beerUntappdURL + "' WHERE idx='" + beerInfo.index + "' AND venue='" + beerInfo.venueNameFull + "'";
                     
-                                        //console.log('SQL: ' + updateBeerSQL);
-                                        logger.warn("Updated untappd item: " + beerInfo.venueNameFull + beerInfo.index, beerInfo.name);
-                                        results.push("Updated untappd item: " + beerInfo.venueNameFull + beerInfo.brewery + beerInfo.name);
+                                        //console.log('SQL: ', updateBeerSQL);
 
-                                        connection.query(updateBeerSQ, function(err, rows, fields){
+                                        connection.query(updateBeerSQL, function(err, rows, fields){
                                             if(!err){
-                                                console.log("inserted row");
+                                                logger.warn("Updated untappd item: " + beerInfo.venueNameFull + beerInfo.index + beerInfo.name);
                                                 callback(null);
                                             } else {
                                                 console.log("Error while performing Query");
