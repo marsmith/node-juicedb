@@ -71,7 +71,7 @@ exports.getUntappdMenu = function(venue) {
     return new Promise(function(resolve, reject){ 
 
         //create table if it doesn't exist
-        var createTableSQL = "CREATE TABLE IF NOT EXISTS `" + untappdTableName  + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY,beertime DATETIME,venue TEXT(100),idx INT,name VARCHAR(100),brewery TEXT(100),style TEXT(100),ABV TEXT(10),IBU TEXT(10),rating TEXT(10),prices TEXT(100),beerLogoURL TEXT(100),beerUntappdURL TEXT(100),venueUntappdURL TEXT(100),venueUntappdLogoURL TEXT(100))";
+        var createTableSQL = "CREATE TABLE IF NOT EXISTS `" + untappdTableName  + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY,beertime DATETIME,venue TEXT(100),idx INT,name VARCHAR(100),brewery TEXT(100),style TEXT(100),ABV TEXT(10),IBU TEXT(10),rating TEXT(10),prices TEXT(100),beerLogoURL TEXT(100),beerUntappdURL TEXT(100),venueUntappdURL TEXT(100),venueUntappdLogoURL TEXT(100),venueAddress TEXT(100))";
 
         //cleanup old records
         var cleanupSQL = "DELETE FROM `" + untappdTableName  + "` WHERE beertime < NOW() - INTERVAL 14 DAY";
@@ -104,6 +104,8 @@ exports.getUntappdMenu = function(venue) {
 
                 //get venue details
                 var venueNameFull = $('.header-details').find('.venue-name').find('h1').text().trim().replace("'","");
+                var venueAddress = $('.header-details').find('.address').text().replace("( Map )","").trim();
+                console.log('HERE',venueAddress)
                 var venueUntappdURL = 'https://untappd.com' + $('.header-details').find('.logo').find('a').attr('href');
                 var venueUntappdLogoURL = $('.header-details').find('.logo').find('img').attr('src');
 
@@ -127,6 +129,7 @@ exports.getUntappdMenu = function(venue) {
                     beerInfo.venueNameFull = venueNameFull;
                     beerInfo.venueUntappdURL = venueUntappdURL;
                     beerInfo.venueUntappdLogoURL = venueUntappdLogoURL;
+                    beerInfo.venueAddress = venueAddress;
 
                     //console.log(beerInfo);
 
@@ -174,7 +177,7 @@ exports.getUntappdMenu = function(venue) {
                                 if (rows.length === 0) {
                                     logger.info('Need to add this beer or update index: ' + beerInfo.name + beerInfo.venueNameFull + beerInfo.index);
                     
-                                    var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "')";
+                                    var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL,venueAddress) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "','" + beerInfo.venueAddress  + "')";
                     
                                     //console.log('SQL: ' + insertBeerSQL);
                                     connection.query(insertBeerSQL, function(err, rows, fields){
