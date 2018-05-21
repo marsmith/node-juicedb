@@ -105,7 +105,6 @@ exports.getUntappdMenu = function(venue) {
                 //get venue details
                 var venueNameFull = $('.header-details').find('.venue-name').find('h1').text().trim().replace("'","");
                 var venueAddress = $('.header-details').find('.address').text().replace("( Map )","").trim();
-                console.log('HERE',venueAddress)
                 var venueUntappdURL = 'https://untappd.com' + $('.header-details').find('.logo').find('a').attr('href');
                 var venueUntappdLogoURL = $('.header-details').find('.logo').find('img').attr('src');
 
