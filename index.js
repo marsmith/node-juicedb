@@ -238,13 +238,14 @@ exports.getUntappdMenu = function(venue) {
                                     if (row.name === beerInfo.name) {
                                         logger.info('Multiple results with this index at this venue: ' + beerInfo.venueNameFull + beerInfo.index + beerInfo.name);
                                         foundFlag = true;
-                                        callback(null);
+                                        
                                     }
                                 });
                                 if (!foundFlag) {
                                     logger.warn('New beer at this venue (this venue doesnt use indexes): ' + beerInfo.venueNameFull + beerInfo.index,beerInfo.name); 
                                 }
-                                }
+                                callback(null);
+                            }
 
                         } else {
                             logger.error(err);
