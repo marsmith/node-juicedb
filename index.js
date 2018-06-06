@@ -178,80 +178,141 @@ exports.getUntappdMenu = function(venue) {
         
                 async.each(beerInfos, function (beerInfo, callback) {
                         
-                    var checkRecordsSQL = "SELECT * FROM `" + untappdTableName  + "` WHERE idx=" + beerInfo.index + " AND venue='" + beerInfo.venueNameFull + "'";
-                    //console.log('SQL: ' + checkRecordsSQL);
+                    //only do this if this beer has an index
+                    if (beerInfo.index != 0) {
 
-                    connection.query(checkRecordsSQL, function(err, rows, fields){
-                        if(!err){
-                            //console.log(JSON.stringify(rows.length));
-        
-                            if (rows.length === 0) {
-                                logger.info('Need to add this beer or update index: ' + beerInfo.name + beerInfo.venueNameFull + beerInfo.index);
-                
-                                var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL,venueAddress) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "','" + beerInfo.venueAddress + "')";
-                
-                                //console.log('SQL: ' + insertBeerSQL);
-                                connection.query(insertBeerSQL, function(err, rows, fields){
-                                    if(!err){
-                                        logger.warn("Added untappd item: " + beerInfo.venueNameFull + beerInfo.brewery + beerInfo.name);
-                                        callback(null);
-                                    } else {
-                                        console.log("Error while performing Query");
-                                        callback(err);
-                                    }
-                                });
-                            
-                            }
-                            //this beer at this index needs to be updated
-                            if (rows.length === 1) {
-                
-                                var data = JSON.parse(JSON.stringify(rows[0]));
-                
-                                //chek if we have this entry already
-                                if (data.idx === beerInfo.index && data.name === beerInfo.name && data.venue === beerInfo.venueNameFull) {
-                                    logger.info('Already exists in the DB at this venue at this index: ' + beerInfo.venueNameFull + data.idx + beerInfo.name);
-                                    callback(null);
-                                }
-                                //check if new beer at this index
-                                if (data.idx === beerInfo.index && data.name !== beerInfo.name && data.venue === beerInfo.venueNameFull) {
-                                    logger.info('New beer at this venue and index: ' +  beerInfo.venueNameFull + beerInfo.index,beerInfo.name);
-                
-                                    var updateBeerSQL = "UPDATE `" + untappdTableName  + "` SET beertime='" + new Date().toLocaleString() + "',idx='" + beerInfo.index + "',name='" + beerInfo.name + "',brewery='" + beerInfo.brewery + "',style='" + beerInfo.style + "',ABV='" + beerInfo.ABV + "',IBU='" + beerInfo.IBU + "',rating='" + beerInfo.rating + "',prices='" + beerInfo.prices + "',beerLogoURL='" + beerInfo.beerLogoURL + "',beerUntappdURL='" + beerInfo.beerUntappdURL + "' WHERE idx='" + beerInfo.index + "' AND venue='" + beerInfo.venueNameFull + "'";
-                
-                                    //console.log('SQL: ', updateBeerSQL);
+                        var checkRecordsSQL = "SELECT * FROM `" + untappdTableName  + "` WHERE idx=" + beerInfo.index + " AND venue='" + beerInfo.venueNameFull + "'";
 
-                                    connection.query(updateBeerSQL, function(err, rows, fields){
+                        //console.log('SQL: ' + checkRecordsSQL);
+    
+                        connection.query(checkRecordsSQL, function(err, rows, fields){
+                            if(!err){
+                                //console.log(JSON.stringify(rows.length));
+            
+                                if (rows.length === 0) {
+                                    logger.info('Need to add this beer or update index: ' + beerInfo.index + ' | ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                    
+                                    var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL,venueAddress) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "','" + beerInfo.venueAddress + "')";
+                    
+                                    //console.log('SQL: ' + insertBeerSQL);
+                                    connection.query(insertBeerSQL, function(err, rows, fields){
                                         if(!err){
-                                            logger.warn("Updated untappd item: " + beerInfo.venueNameFull + beerInfo.index + beerInfo.name);
+                                            logger.warn("Added untappd item: " + beerInfo.index + ' | ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
                                             callback(null);
                                         } else {
-                                            console.log("Error while performing Query");
+                                            console.log("Error while performing Query" + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
                                             callback(err);
-                                        };
+                                        }
                                     });
-                                }   
-                            }
-                            //otherwise need to loop
-                            if (rows.length > 1) {
-                                var foundFlag = false;
-                                rows.forEach(function (row) {
-                                    if (row.name === beerInfo.name) {
-                                        logger.info('Multiple results with this index at this venue: ' + beerInfo.venueNameFull + beerInfo.index + beerInfo.name);
-                                        foundFlag = true;
-                                        
-                                    }
-                                });
-                                if (!foundFlag) {
-                                    logger.warn('New beer at this venue (this venue doesnt use indexes): ' + beerInfo.venueNameFull + beerInfo.index,beerInfo.name); 
+                                
                                 }
-                                callback(null);
-                            }
+                                //this beer at this index needs to be updated
+                                else if (rows.length === 1) {
+                    
+                                    var data = JSON.parse(JSON.stringify(rows[0]));
+                    
+                                    //chek if we have this entry already
+                                    if (data.idx === beerInfo.index && data.name === beerInfo.name && data.venue === beerInfo.venueNameFull) {
+                                        logger.info('Already exists in the DB at this venue at this index: ' + beerInfo.index + ' | ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                                        callback(null);
+                                    }
+                                    //check if new beer at this index
+                                    if (data.idx === beerInfo.index && data.name !== beerInfo.name && data.venue === beerInfo.venueNameFull) {
+                                        logger.info('New beer at this venue and index: ' + beerInfo.index + ' | ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                    
+                                        var updateBeerSQL = "UPDATE `" + untappdTableName  + "` SET beertime='" + new Date().toLocaleString() + "',idx='" + beerInfo.index + "',name='" + beerInfo.name + "',brewery='" + beerInfo.brewery + "',style='" + beerInfo.style + "',ABV='" + beerInfo.ABV + "',IBU='" + beerInfo.IBU + "',rating='" + beerInfo.rating + "',prices='" + beerInfo.prices + "',beerLogoURL='" + beerInfo.beerLogoURL + "',beerUntappdURL='" + beerInfo.beerUntappdURL + "' WHERE idx='" + beerInfo.index + "' AND venue='" + beerInfo.venueNameFull + "'";
+                    
+                                        //console.log('SQL: ', updateBeerSQL);
+    
+                                        connection.query(updateBeerSQL, function(err, rows, fields){
+                                            if(!err){
+                                                logger.warn("Updated untappd item: " + beerInfo.index + ' | ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                                                callback(null);
+                                            } else {
+                                                console.log("Error while performing Query" + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                                                callback(err);
+                                            }
+                                        });
+                                    }   
+                                }
+                                //we have a venue that doesn't use indexes so just add the beer
+                                else if (rows.length > 1) {
+                                    logger.info('Multiple beers found for this venue at this index: ' + beerInfo.index + ' | ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
 
-                        } else {
-                            logger.error(err);
-                            callback(err);
-                        }
-                    });
+                                    callback(null);
+                                }
+                                else {
+                                    logger.info('There was some other error: ' + beerInfo.index + ' | ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+
+                                    callback(null);
+                                }
+    
+                            } else {
+                                logger.error(err);
+                                callback(err);
+                            }
+                        });
+                    }
+
+                    //the venue doesn't use indexes
+                    else {
+                        console.log('THIS VENUE DOESNT USE INDEXES: ' + beerInfo.venueNameFull);
+
+                        var checkRecordsSQL = "SELECT * FROM `" + untappdTableName  + "` WHERE idx=" + beerInfo.index + " AND venue='" + beerInfo.venueNameFull + "' AND name='" + beerInfo.name + "'";
+
+                        //console.log('SQL: ' + checkRecordsSQL);
+    
+                        connection.query(checkRecordsSQL, function(err, rows, fields){
+                            if(!err){
+
+                                //console.log(JSON.stringify(rows.length));
+            
+                                //query didn't find anything so we need to add a beer
+                                if (rows.length === 0) {
+
+                                    logger.info('Need to add this beer (venue doesnt use index): ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                    
+                                    var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL,venueAddress) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "','" + beerInfo.venueAddress + "')";
+                    
+                                    //console.log('SQL: ' + insertBeerSQL);
+                                    connection.query(insertBeerSQL, function(err, rows, fields){
+                                        if(!err){
+                                            logger.warn("Added untappd item: " + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                                            callback(null);
+                                        } else {
+                                            console.log("Error while performing Query"  + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                                            callback(err);
+                                        }
+                                    });
+                                
+                                }
+                                //this beer at this index needs to be updated
+                                else if (rows.length === 1) {
+                                    logger.info('Already exists (venue doesnt use index): ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+
+                                    callback(null);
+                                }
+                                //we have a venue that doesn't use indexes so just add the beer
+                                else if (rows.length > 1) {
+                                    logger.info('Multiple beers already exist (venue doesnt use index): ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+
+                                    callback(null);
+                                }
+                                else {
+                                    logger.info('There was some other error (venue doesnt use index): ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+
+                                    callback(null);
+                                }
+    
+                            } else {
+                                logger.error(err);
+                                callback(err);
+                            }
+                        });
+
+                        //callback(null);
+                    }
+    
                 }, function(err){
                     if(err){
                         logger.error(err);
@@ -321,8 +382,8 @@ exports.getUntappdUser = function(user) {
                     checkinData.push($(item).text());
                 });
                 //console.log('checkin:',checkinData)
-                beerInfo.name = checkinData[1];
-                beerInfo.brewery = checkinData[2];
+                beerInfo.name = checkinData[1].trim().replace("'","");
+                beerInfo.brewery = checkinData[2].trim().replace("'","");
                 beerInfo.index = 0;
                 beerInfos.push(beerInfo);
 
@@ -369,7 +430,7 @@ exports.getUntappdUser = function(user) {
                                             logger.warn("Added untappd item: " + beerInfo.venueNameFull + beerInfo.brewery + beerInfo.name);
                                             callback(null);
                                         } else {
-                                            console.log("Error while performing Query");
+                                            console.log("Error while performing Query" + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
                                             callback(err);
                                         }
                                     });
@@ -516,7 +577,7 @@ exports.instagramByUser = function(user) {
                                                     logger.warn("Inserted Instagram item: " + item.user);
                                                     callback(null);
                                                 } else {
-                                                    console.log("Error while performing Query",err);
+                                                    console.log("Error while performing Query" + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
                                                     callback(err);
                                                 }
                                             });

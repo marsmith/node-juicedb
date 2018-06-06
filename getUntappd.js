@@ -29,7 +29,7 @@ localjuice.cleanupUntappd().then(function(result){
 
 
 //for testing
-//localjuice.getUntappdMenu('sharon-package-store/4220556');
+//localjuice.getUntappdMenu('hill-street-cafe/70543');
 
 //for testing
 //localjuice.getUntappdUser('FranklinAlleySocialClub')
