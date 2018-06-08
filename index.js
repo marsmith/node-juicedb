@@ -4,16 +4,20 @@ var mysql = require( 'mysql' );
 var request = require('request');
 var Promise = require('bluebird');
 var async   = require('async');
+var puppeteer = require('puppeteer');
+var scrapetwitter = require('scrape-twitter');
 var { createLogger, format, transports } = require('winston');
 var { combine, timestamp, printf } = format;
 var dbInfo = require('./dbInfo.js');
 
 var untappdTableName = 'untappd';
 var instagramTableName = 'instagram';
+var twitterTableName = 'twitter';
 var untappdUserURL = 'https://untappd.com/user/';
 var untappdVenueURL = 'https://untappd.com/v/';
 var instagramURL = 'https://www.instagram.com/';
 var numInstagramPosts = 5;
+var numTweets = 10;
 dataExp = /window\._sharedData\s?=\s?({.+);<\/script>/;
 var connection;
 var daysToExpire = 14;
@@ -616,5 +620,116 @@ exports.instagramByUser = function(user) {
                 reject(new Error('Error scraping tag page "' + tag + '"'));
             }
         });
+    });
+};
+
+exports.cleanupTwitter = function() {
+
+    return new Promise(function(resolve, reject){
+
+        var createTableSQL = "CREATE TABLE IF NOT EXISTS `" + twitterTableName + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY, beertime DATETIME,user TEXT(100),venue TEXT(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,text VARCHAR(2200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,userPhotoURL TEXT(200),imageURL TEXT(200)) CHARACTER SET utf8 COLLATE utf8_general_ci";
+
+        var cleanupSQL = "DELETE FROM `" + twitterTableName  + "` WHERE beertime < NOW() - INTERVAL " + daysToExpire + " DAY";
+
+        //set DB charset for emojis, error without this
+        dbInfo.data.charset = 'utf8mb4';
+
+        Database.execute( dbInfo.data,
+            //first query checks if database exists if not creates it
+            database => database.query(createTableSQL)
+            //second query cleans up old records in database
+            .then( rows => {
+                return database.query(cleanupSQL);
+            } )
+        ).then( () => {
+            resolve({"result": "Finished twitter DB cleanup"});
+
+        }).catch( err => {
+            console.log('there was an error',err)
+        });
+    });
+};
+
+exports.getTwitterByUser = function(user) {
+
+    return new Promise(function(resolve, reject){
+        if (!user) return reject(new Error('Argument "user" must be specified'));
+    
+        //console.log('starting twitter scrape',user);
+
+        //first get twitter profile so we can get user logo
+        var twitterProfile = new scrapetwitter.getUserProfile(user);
+        
+        twitterProfile.then(function(profile){
+            //console.log('profile',profile);
+
+            //then get tweets
+            var tweetData = [];
+            var twitterStream = new scrapetwitter.TimelineStream(user,{retweets:false,replies:false,count:numTweets});
+
+            twitterStream.on('data', function(tweet) {
+                console.log('results',numTweets);
+                numTweets -=1;
+                tweetData.push(tweet);
+                //console.log(tweet);
+            });
+
+            twitterStream.on('end', function() {
+                console.log('done getting twitter stream');
+
+                var connection = mysql.createConnection(dbInfo.data);
+
+                async.each(tweetData, function (tweet, callback) {
+                    //console.log(tweet);
+
+                    var checkRecordsSQL = "SELECT * FROM `" + twitterTableName  + "` WHERE beertime='" + new Date(tweet.time).toLocaleString() + "' AND user='" + tweet.screenName + "'";  
+                    //console.log('SQL: ' + checkRecordsSQL);
+
+                    connection.query(checkRecordsSQL, function(err, rows, fields){
+                        if(!err){
+
+                            //if there are no hits, add it
+                            if (rows.length === 0) {
+
+                                logger.info('Need to add this tweet: ' + tweet.text);
+
+                                var insertTweetSQL = "INSERT INTO `" + twitterTableName  + "` (beertime,user,venue,text,userPhotoURL,imageURL) VALUES ('" + new Date(tweet.time).toLocaleString() + "','" + tweet.screenName + "','" + profile.name + "','" + tweet.text.replace("'","") + "','" + profile.profileImage + "','" + tweet.images[0] + "')";
+
+                                //console.log('SQL', insertTweetSQL)
+
+                                connection.query(insertTweetSQL, function(err, rows, fields){
+                                    if(!err){
+                                        logger.warn("Added tweet: "  + tweet.text);
+                                        callback(null);
+                                    } else {
+                                        console.log("Error while performing Query");
+                                        callback(err);
+                                    }
+                                });
+                    
+                            }
+                            //otherwise 
+                            else {
+                                logger.info('Twiter post already exists: ' + tweet.text);
+                                callback(null);
+                            }
+                        } else {
+                            logger.error(err);
+                            callback(err);
+                        }
+
+                    });
+                }, function(err){
+                    if(err){
+                        logger.error(err);
+                        connection.end();
+                    }else{
+                        console.log('finally done');
+                        connection.end();
+                        resolve(null);
+                    }
+                });
+            });
+        });        
     });
 };
