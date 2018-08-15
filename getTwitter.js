@@ -1,6 +1,6 @@
 var localjuice = require('./index');
 
-var twitterUsers = ['TreeHouseBrewCo','burlingtonbeer','riverroostvt'];
+var twitterUsers = ['TreeHouseBrewCo','burlingtonbeer','riverroostvt','eqbrewery'];
 
 //first cleaup and DB check
 localjuice.cleanupTwitter().then(function(result){
