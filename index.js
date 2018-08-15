@@ -4,7 +4,7 @@ var mysql = require( 'mysql' );
 var request = require('request');
 var Promise = require('bluebird');
 var async   = require('async');
-var puppeteer = require('puppeteer');
+var iconv = require('iconv-lite');
 var scrapetwitter = require('scrape-twitter');
 var { createLogger, format, transports } = require('winston');
 var { combine, timestamp, printf } = format;
@@ -505,7 +505,8 @@ exports.instagramByUser = function(user) {
         var options = {
             url: instagramURL + user,
             headers: {
-                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/600.1.3 (KHTML, like Gecko) Version/8.0 Mobile/12A4345d Safari/600.1.4'
+                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/600.1.3 (KHTML, like Gecko) Version/8.0 Mobile/12A4345d Safari/600.1.4',
+                "encoding": "text/html;charset='charset=utf-8'"
             }
         };
         
@@ -518,6 +519,7 @@ exports.instagramByUser = function(user) {
                            
                 var edges = data.entry_data.ProfilePage[0].graphql.user.edge_owner_to_timeline_media.edges;
                 var venue = data.entry_data.ProfilePage[0].graphql.user.full_name;
+                if (venue === '𝖱𝖮𝖮𝖳 + 𝖡𝖱𝖠𝖭𝖢𝖧 𝖡𝖱𝖤𝖶𝖨𝖭𝖦') venue = 'ROOT + BRANCH BREWING';
                 var venueLogo = data.entry_data.ProfilePage[0].graphql.user.profile_pic_url;
 
                 async.waterfall([
@@ -581,7 +583,7 @@ exports.instagramByUser = function(user) {
                                                     logger.warn("Inserted Instagram item: " + item.user);
                                                     callback(null);
                                                 } else {
-                                                    console.log("Error while performing Query" + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                                                    console.log("Error while performing Instagram Query: " + item.user + ' | ' + item.venue);
                                                     callback(err);
                                                 }
                                             });
