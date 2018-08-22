@@ -694,7 +694,7 @@ exports.getTwitterByUser = function(user) {
 
                                 logger.info('Need to add this tweet: ' + tweet.text);
 
-                                var insertTweetSQL = "INSERT INTO `" + twitterTableName  + "` (beertime,user,venue,text,userPhotoURL,imageURL) VALUES ('" + new Date(tweet.time).toLocaleString() + "','" + tweet.screenName + "','" + profile.name + "','" + tweet.text.replace("'","") + "','" + profile.profileImage + "','" + tweet.images[0] + "')";
+                                var insertTweetSQL = "INSERT INTO `" + twitterTableName  + "` (beertime,user,venue,text,userPhotoURL,imageURL) VALUES ('" + new Date(tweet.time).toISOString().slice(0, 19).replace('T', ' ') + "','" + tweet.screenName + "','" + profile.name + "','" + tweet.text.replace("'","") + "','" + profile.profileImage + "','" + tweet.images[0] + "')";
 
                                 console.log('SQL', insertTweetSQL)
 
