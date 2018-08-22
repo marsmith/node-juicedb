@@ -4,7 +4,6 @@ var mysql = require( 'mysql' );
 var request = require('request');
 var Promise = require('bluebird');
 var async   = require('async');
-var iconv = require('iconv-lite');
 var scrapetwitter = require('scrape-twitter');
 var { createLogger, format, transports } = require('winston');
 var { combine, timestamp, printf } = format;
