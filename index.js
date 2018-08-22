@@ -696,7 +696,7 @@ exports.getTwitterByUser = function(user) {
 
                                 var insertTweetSQL = "INSERT INTO `" + twitterTableName  + "` (beertime,user,venue,text,userPhotoURL,imageURL) VALUES ('" + new Date(tweet.time) + "','" + tweet.screenName + "','" + profile.name + "','" + tweet.text.replace("'","") + "','" + profile.profileImage + "','" + tweet.images[0] + "')";
 
-                                //console.log('SQL', insertTweetSQL)
+                                console.log('SQL', insertTweetSQL)
 
                                 connection.query(insertTweetSQL, function(err, rows, fields){
                                     if(!err){
