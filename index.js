@@ -546,8 +546,10 @@ exports.instagramByUser = function(user) {
                                     text : text[0].replace(/[\u0800-\uFFFF]/g, '').replace(/\n/g,' ').replace(/'/g, ""),
                                     thumbnailURL : post.node.thumbnail_resources[3].src,
                                     imageURL : post.node.display_url,
-                                    date : new Date(post.node.taken_at_timestamp * 1000).toLocaleString()
+                                    date : formatDate(new Date(post.node.taken_at_timestamp * 1000))
                                 });
+
+                                //console.log('testest',post.node.taken_at_timestamp, formatDate(new Date(post.node.taken_at_timestamp * 1000)))
                             }
                         }
                         callback(null, medias);
@@ -579,7 +581,7 @@ exports.instagramByUser = function(user) {
                                             console.log("DATE",item.date);
     
                                             //write to database
-                                            var insertPostSQL = "INSERT INTO `" + instagramTableName  + "` (beertime,user,venue,text,venueLogoURL,thumbnailURL,imageURL) VALUES ('" + formatDate(item.date) + "','" + item.user + "','" + item.venue + "','" + item.text + "','" + item.venueLogoURL + "','" + item.thumbnailURL + "','" + item.imageURL + "')";
+                                            var insertPostSQL = "INSERT INTO `" + instagramTableName  + "` (beertime,user,venue,text,venueLogoURL,thumbnailURL,imageURL) VALUES ('" + item.date + "','" + item.user + "','" + item.venue + "','" + item.text + "','" + item.venueLogoURL + "','" + item.thumbnailURL + "','" + item.imageURL + "')";
     
                                             //console.log('SQL', insertPostSQL);
     
