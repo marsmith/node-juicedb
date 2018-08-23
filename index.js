@@ -571,7 +571,7 @@ exports.instagramByUser = function(user) {
                             if ((now - postDate) < weekInMilliseconds) {
                                 //console.log('POST IS NEWER THAN ONE WEEK');
 
-                                var checkRecordsSQL = "SELECT * FROM `" + instagramTableName  + "` WHERE user='" + item.user + "' AND beertime='" + item.date + "'"; 
+                                var checkRecordsSQL = "SELECT * FROM `" + instagramTableName  + "` WHERE user='" + item.user + "' AND beertime='" + formatDate(item.date) + "'"; 
                                 connection.query(checkRecordsSQL, function(err, rows, fields){
                                     if(!err){
         
