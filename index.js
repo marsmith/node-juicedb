@@ -160,6 +160,8 @@ exports.getUntappdMenu = function(venue) {
                     beerInfo.name = $beerDetailsH5.find('a').text().trim().replace("'","");
                     beerInfo.index = 0;
                 }
+
+                beerInfo.beertime = formatDate(new Date());
                 beerInfo.beerLogoURL = $(beer).find('.beer-label').find('img').attr('src');
                 var beerDetails = $beerDetailsH6.find('span').text().split('•');
                 beerInfo.ABV = beerDetails[0].replace('ABV','').trim();
@@ -195,7 +197,7 @@ exports.getUntappdMenu = function(venue) {
                                 if (rows.length === 0) {
                                     logger.info('Need to add this beer or update index: ' + beerInfo.index + ' | ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
                     
-                                    var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL,venueAddress) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "','" + beerInfo.venueAddress + "')";
+                                    var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL,venueAddress) VALUES ('" + beerInfo.beertime + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "','" + beerInfo.venueAddress + "')";
                     
                                     //console.log('SQL: ' + insertBeerSQL);
                                     connection.query(insertBeerSQL, function(err, rows, fields){
@@ -373,7 +375,7 @@ exports.getUntappdUser = function(user) {
                 beerInfo.venueUntappdURL = venueUntappdURL;
                 beerInfo.venueUntappdLogoURL = venueUntappdLogoURL;
 
-                beerInfo.beertime = $(beer).find('.checkin').find('.feedback').find('.bottom').find('a.time.timezoner.track-click').text();
+                beerInfo.beertime = formatDate(new Date($(beer).find('.checkin').find('.feedback').find('.bottom').find('a.time.timezoner.track-click').text()));
                 beerInfo.beerUntappdURL = 'https://untappd.com' + $(beer).find('.checkin').find('.top').find('a').attr('href');
                 beerInfo.beerLogoURL = $(beer).find('.checkin').find('.top').find('a').find('img').attr('data-original');
 
@@ -396,7 +398,7 @@ exports.getUntappdUser = function(user) {
                 async.each(beerInfos, function (beerInfo, callback) {
                     //console.log(beerInfo)
 
-                    var checkRecordsSQL = "SELECT * FROM `" + untappdTableName  + "` WHERE beertime='" + new Date(beerInfo.beertime).toLocaleString() + "' AND venue='" + beerInfo.venueNameFull + "'";  
+                    var checkRecordsSQL = "SELECT * FROM `" + untappdTableName  + "` WHERE beertime='" + beerInfo.beertime + "' AND venue='" + beerInfo.venueNameFull + "'";  
                     //console.log('SQL: ' + checkRecordsSQL);
 
                     connection.query(checkRecordsSQL, function(err, rows, fields){
@@ -425,8 +427,10 @@ exports.getUntappdUser = function(user) {
                                     beerInfo.IBU = $('.details').find('.ibu').text().replace(' IBU','').trim();
                                     if (beerInfo.IBU === 'No') beerInfo.IBU = 'N/A';
                                     beerInfo.style = $('.top').find('.name').find('.style').text();
+
+                                    console.log('DATE',beerInfo.beertime)
                                     
-                                    var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL) VALUES ('" + new Date(beerInfo.beertime).toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "')";
+                                    var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL) VALUES ('" + beerInfo.beertime + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "')";
             
                                     connection.query(insertBeerSQL, function(err, rows, fields){
                                         if(!err){
@@ -478,7 +482,7 @@ exports.cleanupInstagram = function() {
 
         var createTableSQL = "CREATE TABLE IF NOT EXISTS `" + instagramTableName + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY, beertime DATETIME,user TEXT(100),venue TEXT(100),text VARCHAR(2200) COLLATE utf8_general_ci,venueLogoURL TEXT(200),thumbnailURL TEXT(200),imageURL TEXT(200))";
 
-        var cleanupSQL = "DELETE FROM `" + untappdTableName  + "` WHERE beertime < NOW() - INTERVAL " + daysToExpire + " DAY";
+        var cleanupSQL = "DELETE FROM `" + instagramTableName + "` WHERE beertime < NOW() - INTERVAL " + daysToExpire + " DAY";
 
         Database.execute( dbInfo.data,
             //first query checks if database exists if not creates it
@@ -542,8 +546,10 @@ exports.instagramByUser = function(user) {
                                     text : text[0].replace(/[\u0800-\uFFFF]/g, '').replace(/\n/g,' ').replace(/'/g, ""),
                                     thumbnailURL : post.node.thumbnail_resources[3].src,
                                     imageURL : post.node.display_url,
-                                    date : new Date(post.node.taken_at_timestamp * 1000).toLocaleString()
+                                    date : new Date(post.node.taken_at_timestamp * 1000)
                                 });
+
+                                //console.log('testest',post.node.taken_at_timestamp, formatDate(new Date(post.node.taken_at_timestamp * 1000)))
                             }
                         }
                         callback(null, medias);
@@ -560,7 +566,7 @@ exports.instagramByUser = function(user) {
                             //only process if less than 7 days old
                             var weekInMilliseconds = daysToExpire * 24 * 60 * 60 * 1000;
                             var now = new Date();
-                            var postDate = Date.parse(item.date)
+                            var postDate = Date.parse(item.date);
 
                             if ((now - postDate) < weekInMilliseconds) {
                                 //console.log('POST IS NEWER THAN ONE WEEK');
@@ -571,9 +577,11 @@ exports.instagramByUser = function(user) {
         
                                         //if there are no hits, add it
                                         if (rows.length === 0) {
+
+                                            console.log("DATE",formatDate(item.date));
     
                                             //write to database
-                                            var insertPostSQL = "INSERT INTO `" + instagramTableName  + "` (beertime,user,venue,text,venueLogoURL,thumbnailURL,imageURL) VALUES ('" + item.date + "','" + item.user + "','" + item.venue + "','" + item.text + "','" + item.venueLogoURL + "','" + item.thumbnailURL + "','" + item.imageURL + "')";
+                                            var insertPostSQL = "INSERT INTO `" + instagramTableName  + "` (beertime,user,venue,text,venueLogoURL,thumbnailURL,imageURL) VALUES ('" + formatDate(item.date) + "','" + item.user + "','" + item.venue + "','" + item.text + "','" + item.venueLogoURL + "','" + item.thumbnailURL + "','" + item.imageURL + "')";
     
                                             //console.log('SQL', insertPostSQL);
     
@@ -589,7 +597,7 @@ exports.instagramByUser = function(user) {
                                         }
                                         //otherwise 
                                         else {
-                                            logger.info('This instagram post already exists: ' + item.user);
+                                            //logger.info('This instagram post already exists: ' + item.user);
                                             callback(null);
                                         }
                                     } else {
@@ -673,6 +681,7 @@ exports.getTwitterByUser = function(user) {
                 numTweets -=1;
                 tweetData.push(tweet);
                 //console.log(tweet);
+                //console.log(tweet.text,tweet.time,new Date(tweet.time).toLocaleString(), formatDate(new Date(tweet.time)));
             });
 
             twitterStream.on('end', function() {
@@ -683,7 +692,7 @@ exports.getTwitterByUser = function(user) {
                 async.each(tweetData, function (tweet, callback) {
                     //console.log(tweet);
 
-                    var checkRecordsSQL = "SELECT * FROM `" + twitterTableName  + "` WHERE beertime='" + new Date(tweet.time).toLocaleString() + "' AND user='" + tweet.screenName + "'";  
+                    var checkRecordsSQL = "SELECT * FROM `" + twitterTableName  + "` WHERE beertime='" + formatDate(new Date(tweet.time))  + "' AND user='" + tweet.screenName + "'";  
                     //console.log('SQL: ' + checkRecordsSQL);
 
                     connection.query(checkRecordsSQL, function(err, rows, fields){
@@ -692,11 +701,12 @@ exports.getTwitterByUser = function(user) {
                             //if there are no hits, add it
                             if (rows.length === 0) {
 
-                                logger.info('Need to add this tweet: ' + tweet.text);
+                                //logger.info('Need to add this tweet: ' + tweet.text);
+                                //console.log(tweet.time,new Date(tweet.time).toLocaleString(), formatDate(new Date(tweet.time)));
 
-                                var insertTweetSQL = "INSERT INTO `" + twitterTableName  + "` (beertime,user,venue,text,userPhotoURL,imageURL) VALUES ('" + new Date(tweet.time).toLocaleString() + "','" + tweet.screenName + "','" + profile.name + "','" + tweet.text.replace("'","") + "','" + profile.profileImage + "','" + tweet.images[0] + "')";
+                                var insertTweetSQL = "INSERT INTO `" + twitterTableName  + "` (beertime,user,venue,text,userPhotoURL,imageURL) VALUES ('" + formatDate(new Date(tweet.time)) + "','" + tweet.screenName + "','" + profile.name + "','" + tweet.text.replace("'","").replace("'","") + "','" + profile.profileImage + "','" + tweet.images[0] + "')";
 
-                                //console.log('SQL', insertTweetSQL)
+                                console.log('SQL', insertTweetSQL)
 
                                 connection.query(insertTweetSQL, function(err, rows, fields){
                                     if(!err){
@@ -734,3 +744,8 @@ exports.getTwitterByUser = function(user) {
         });        
     });
 };
+
+
+function formatDate(d) {
+    return (d.getFullYear() + "-" + ("00" + (d.getMonth() + 1)).slice(-2)) + "-" + ("00" + d.getDate()).slice(-2) + " " + ("00" + d.getHours()).slice(-2) + ":" + ("00" + d.getMinutes()).slice(-2) + ":" + ("00" + d.getSeconds()).slice(-2);
+}
