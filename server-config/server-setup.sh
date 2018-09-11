@@ -2,7 +2,7 @@
 
 #args
 USER="pi"
-USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
+USER_HOME=$(getent passwd $USER | cut -d: -f6)
 MYSQL_PASSWORD='abc123'
 LIST_OF_MAIN_APPS="git mariadb-client mariadb-server apache2 php7.0 php7.0-mysql libapache2-mod-php7.0 phpmyadmin"
 
@@ -22,7 +22,7 @@ git clone https://github.com/marsmith/thejuicefeed ${USER_HOME}/thejuicefeed
 npm install --prefix ${APP_PATH}/node-localjuicedb
 
 #create symbolic link
-sudo ln -s ${APP_PATH}/thejuicefeed /var/www/html/thejuicefeed
+sudo ln -s ${USER_HOME}/thejuicefeed /var/www/html/thejuicefeed
 
 #setup up cron jobs
 (crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${APP_PATH}/node-localjuicedb/getUntappd.js" ) | crontab -u ${USER} -
