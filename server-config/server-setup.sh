@@ -26,6 +26,11 @@ ln -s ${APP_PATH}/thejuicefeed /var/www/html/thejuicefeed
 (crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/nodejs ${APP_PATH}/node-localjuicedb/getInstagram.js" ) | crontab -u ${USER} -
 (crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/nodejs ${APP_PATH}/node-localjuicedb/getTwitter.js" ) | crontab -u ${USER} -
 
+#create blank database
+echo "Please enter root user MySQL password!"
+    read rootpasswd
+    mysql -uroot -p${rootpasswd} -e "CREATE DATABASE localjuicefeed;"
+
 ### create virtual host rules file
 echo "
     <VirtualHost *:80>
