@@ -13,8 +13,8 @@ sudo apt-get update  # To get the latest package lists
 sudo apt-get install -y $LIST_OF_MAIN_APPS
 
 #download repos
-git clone https://github.com/marsmith/node-localjuicedb $HOME
-git clone https://github.com/marsmith/thejuicefeed $HOME
+git clone https://github.com/marsmith/node-localjuicedb
+git clone https://github.com/marsmith/thejuicefeed
 
 #install npm dependencies
 npm install --prefix $HOME/node-localjuicedb
