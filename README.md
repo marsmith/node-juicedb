@@ -11,26 +11,20 @@ The following info is a guide to setting up a basic lamp stack on a raspberry pi
 
 Follow raspbian installation guide [here](https://www.raspberrypi.org/documentation/installation/installing-images/README.md)
 
-## Configure locale
+## Configure raspbian
 
-If keyboard keys not correct set locale with : `sudo dpkg-reconfigure keyboard-configuration` then `sudo reboot`
+Run `sudo raspi-config` to set up your wifi network and locale (keyboard)
 
 ## Configure network
 Once you have successfully installed the OS, log in with user "pi" password "raspberry"
 
 **Wireless config**:
-edit wireless setup file with `sudo nano /etc/wpa_supplicant/wpa_supplicant.conf`
-```
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1 
-country=US 
+edit wireless setup file with `sudo nano /etc/network/interfaces` and add this to the bottom:
 
-network={ 
-	ssid="Your network SSID" 
-	scan_ssid=1
-	psk="Your WPA/WPA2 security key" 
-	key_mgmt=WPA-PSK 
-}
+```
+allow-hotplug wlan0
+iface wlan0 inet manual
+    wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
 ```
 
 **Wired config (using DHCP)**: 
