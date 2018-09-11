@@ -45,6 +45,7 @@ static domain_name_servers=192.168.50.1
 ```
 
 ## Setup software
-run server setup script: `wget -O - https://raw.githubusercontent.com/marsmith/node-localjuicedb/blob/master/server-config/server-setup.sh  | bash;`
+get server setup script: `wget https://raw.githubusercontent.com/marsmith/node-localjuicedb/master/server-config/server-setup.sh`
+run script: `sudo sh server-setup.sh`
 
 
