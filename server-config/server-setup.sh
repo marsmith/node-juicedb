@@ -12,14 +12,15 @@ wget -O - https://raw.githubusercontent.com/audstanley/NodeJs-Raspberry-Pi/maste
 #install apps
 apt-get update  # To get the latest package lists
 #apt-get upgrade #upgrade all softwares
-apt-get install -y $LIST_OF_MAIN_APPS
+#apt-get install -y $LIST_OF_MAIN_APPS
+apt-get install -y git
 
 #download repos
 git clone https://github.com/marsmith/node-localjuicedb ${APP_PATH}
 git clone https://github.com/marsmith/thejuicefeed ${APP_PATH}
 
 #install npm dependencies
-npm install --prefix ${APP_PATH}/node-localjuicedb
+#npm install --prefix ${APP_PATH}/node-localjuicedb
 
 #create symbolic link
 ln -s ${APP_PATH}/thejuicefeed /var/www/html/thejuicefeed
@@ -30,12 +31,12 @@ ln -s ${APP_PATH}/thejuicefeed /var/www/html/thejuicefeed
 (crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/nodejs ${APP_PATH}/node-localjuicedb/getTwitter.js" ) | crontab -u ${USER} -
 
 #set mysql root password
-mysql_secure_installation
+#mysql_secure_installation
 
 #create blank database
-echo "Please enter root user MySQL password!"
-    read rootpasswd
-    mysql -uroot -p${rootpasswd} -e "CREATE DATABASE localjuicefeed;"
+#echo "Please enter root user MySQL password!"
+#    read rootpasswd
+#    mysql -uroot -p${rootpasswd} -e "CREATE DATABASE localjuicefeed;"
 
 ### create virtual host rules file
 echo "
