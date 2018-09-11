@@ -11,6 +11,10 @@ The following info is a guide to setting up a basic lamp stack on a raspberry pi
 
 Follow raspbian installation guide [here](https://www.raspberrypi.org/documentation/installation/installing-images/README.md)
 
+## Configure locale
+
+If keyboard keys not correct set locale with : `sudo dpkg-reconfigure keyboard-configuration` then `sudo reboot`
+
 ## Configure network
 Once you have successfully installed the OS, log in with user "pi" password "raspberry"
 
@@ -43,10 +47,6 @@ static ip_address=192.168.50.50/24
 static routers=192.168.50.1 
 static domain_name_servers=192.168.50.1
 ```
-
-## Configure locale
-
-If keyboard keys not correct set locale with : `sudo raspi-config` then `sudo reboot`
 
 ## Setup software
 
