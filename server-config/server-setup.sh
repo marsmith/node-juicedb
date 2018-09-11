@@ -19,7 +19,7 @@ git clone https://github.com/marsmith/node-localjuicedb ${USER_HOME}/node-localj
 git clone https://github.com/marsmith/thejuicefeed ${USER_HOME}/thejuicefeed
 
 #install npm dependencies
-npm install --prefix ${APP_PATH}/node-localjuicedb
+npm install --prefix ${USER_HOME}/node-localjuicedb
 
 #create symbolic link
 sudo ln -s ${USER_HOME}/thejuicefeed /var/www/html/thejuicefeed
