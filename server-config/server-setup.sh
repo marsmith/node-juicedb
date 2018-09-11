@@ -16,8 +16,8 @@ apt-get update  # To get the latest package lists
 apt-get install -y $LIST_OF_MAIN_APPS
 
 #download repos
-git clone https://github.com/marsmith/node-localjuicedb ${APP_PATH}
-git clone https://github.com/marsmith/thejuicefeed ${APP_PATH}
+git clone https://github.com/marsmith/node-localjuicedb ${APP_PATH}/node-localjuicedb
+git clone https://github.com/marsmith/thejuicefeed ${APP_PATH}/thejuicefeed
 
 #install npm dependencies
 npm install --prefix ${APP_PATH}/node-localjuicedb
@@ -26,9 +26,9 @@ npm install --prefix ${APP_PATH}/node-localjuicedb
 ln -s ${APP_PATH}/thejuicefeed /var/www/html/thejuicefeed
 
 #setup up cron jobs
-(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/nodejs ${APP_PATH}/node-localjuicedb/getUntappd.js" ) | crontab -u ${USER} -
-(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/nodejs ${APP_PATH}/node-localjuicedb/getInstagram.js" ) | crontab -u ${USER} -
-(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/nodejs ${APP_PATH}/node-localjuicedb/getTwitter.js" ) | crontab -u ${USER} -
+(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${APP_PATH}/node-localjuicedb/getUntappd.js" ) | crontab -u ${USER} -
+(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${APP_PATH}/node-localjuicedb/getInstagram.js" ) | crontab -u ${USER} -
+(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${APP_PATH}/node-localjuicedb/getTwitter.js" ) | crontab -u ${USER} -
 
 #mysql setup
 mysql -e "UPDATE mysql.user SET Password = PASSWORD(${MYSQL_PASSWORD}) WHERE User = 'root'"
