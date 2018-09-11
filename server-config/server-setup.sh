@@ -1,9 +1,8 @@
 #!/bin/sh
 
 #args
+USER="pi"
 USER_HOME=$(getent passwd $SUDO_USER | cut -d: -f6)
-APP_PATH="/home/pi"
-USER=$SUDO_USER
 MYSQL_PASSWORD='abc123'
 LIST_OF_MAIN_APPS="git mariadb-client mariadb-server apache2 php7.0 php7.0-mysql libapache2-mod-php7.0 phpmyadmin"
 
@@ -11,19 +10,19 @@ LIST_OF_MAIN_APPS="git mariadb-client mariadb-server apache2 php7.0 php7.0-mysql
 wget -O - https://raw.githubusercontent.com/audstanley/NodeJs-Raspberry-Pi/master/Install-Node.sh | bash;
 
 #install apps
-apt-get update  # To get the latest package lists
+sudo apt-get update  # To get the latest package lists
 #apt-get upgrade #upgrade all softwares
-apt-get install -y $LIST_OF_MAIN_APPS
+sudo apt-get install -y $LIST_OF_MAIN_APPS
 
 #download repos
-git clone https://github.com/marsmith/node-localjuicedb ${APP_PATH}/node-localjuicedb
-git clone https://github.com/marsmith/thejuicefeed ${APP_PATH}/thejuicefeed
+git clone https://github.com/marsmith/node-localjuicedb ${USER_HOME}/node-localjuicedb
+git clone https://github.com/marsmith/thejuicefeed ${USER_HOME}/thejuicefeed
 
 #install npm dependencies
 npm install --prefix ${APP_PATH}/node-localjuicedb
 
 #create symbolic link
-ln -s ${APP_PATH}/thejuicefeed /var/www/html/thejuicefeed
+sudo ln -s ${APP_PATH}/thejuicefeed /var/www/html/thejuicefeed
 
 #setup up cron jobs
 (crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${APP_PATH}/node-localjuicedb/getUntappd.js" ) | crontab -u ${USER} -
