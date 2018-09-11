@@ -45,6 +45,6 @@ static domain_name_servers=192.168.50.1
 ```
 
 ## Setup software
-
+run server setup script: `wget -O - https://raw.githubusercontent.com/USGS-WiM/nwis-mapper/master/server-config/server-setup.sh  | bash;`
 
 
