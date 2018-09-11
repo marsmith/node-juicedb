@@ -10,17 +10,17 @@ wget -O - https://raw.githubusercontent.com/audstanley/NodeJs-Raspberry-Pi/maste
 #install apps
 sudo apt-get update  # To get the latest package lists
 #apt-get upgrade #upgrade all softwares
-sudo apt-get install -y $LIST_OF_MAIN_APPS
+sudo apt-get install -y ${LIST_OF_MAIN_APPS}
 
 #download repos
-git clone https://github.com/marsmith/node-localjuicedb
-git clone https://github.com/marsmith/thejuicefeed
+git clone https://github.com/marsmith/node-localjuicedb ${HOME}/node-juicedb
+git clone https://github.com/marsmith/thejuicefeed ${HOME}/thejuicefeed
 
 #install npm dependencies
-npm install --prefix $HOME/node-localjuicedb
+npm install --prefix ${HOME}/node-localjuicedb
 
 #create symbolic link
-sudo ln -s $HOME/thejuicefeed /var/www/html/thejuicefeed
+sudo ln -s ${HOME}/thejuicefeed /var/www/html/thejuicefeed
 
 #setup up cron jobs
 (crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${APP_PATH}/node-localjuicedb/getUntappd.js" ) | crontab -u ${USER} -
