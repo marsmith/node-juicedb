@@ -28,9 +28,9 @@ sudo ln -s ${HOME}/thejuicefeed /var/www/html/thejuicefeed
 (crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${APP_PATH}/node-localjuicedb/getTwitter.js" ) | crontab -u ${USER} -
 
 #mysql setup
-mysql -e "UPDATE mysql.user SET Password = PASSWORD(${MYSQL_PASSWORD}) WHERE User = 'root'"
-mysql -uroot -p${MYSQL_PASSWORD} -e "CREATE DATABASE localjuicefeed;"
-echo "UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE user = 'root' AND plugin = 'unix_socket';FLUSH PRIVILEGES;" | mysql -u root -p
+sudo mysql -e "UPDATE mysql.user SET Password = PASSWORD(${MYSQL_PASSWORD}) WHERE User = 'root'"
+sudo mysql -uroot -p${MYSQL_PASSWORD} -e "CREATE DATABASE localjuicefeed;"
+echo "UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE user = 'root' AND plugin = 'unix_socket';FLUSH PRIVILEGES;" | sudo mysql -u root -p
 
 ### create virtual host rules file
 echo "
