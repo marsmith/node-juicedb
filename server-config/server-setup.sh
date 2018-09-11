@@ -33,6 +33,7 @@ ln -s ${APP_PATH}/thejuicefeed /var/www/html/thejuicefeed
 #mysql setup
 mysql -e "UPDATE mysql.user SET Password = PASSWORD(${MYSQL_PASSWORD}) WHERE User = 'root'"
 mysql -uroot -p${MYSQL_PASSWORD} -e "CREATE DATABASE localjuicefeed;"
+echo "UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE user = 'root' AND plugin = 'unix_socket';FLUSH PRIVILEGES;" | mysql -u root -p
 
 ### create virtual host rules file
 echo "
