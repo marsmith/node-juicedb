@@ -13,10 +13,12 @@ Follow raspbian installation guide [here](https://www.raspberrypi.org/documentat
 
 ## Configure raspbian
 
-Run `sudo raspi-config` to set up your wifi network and locale (keyboard)
-
-## Configure network
 Once you have successfully installed the OS, log in with user "pi" password "raspberry"
+
+Run `sudo raspi-config` to set up:
+
+- wifi network (SSID and PSK)
+- localization options (ie. keyboard layout)
 
 **Wireless config**:
 edit wireless setup file with `sudo nano /etc/network/interfaces` and add this to the bottom:
