@@ -23,14 +23,14 @@ npm install --prefix ${HOME}/node-localjuicedb
 sudo ln -s ${HOME}/thejuicefeed /var/www/html/thejuicefeed
 
 #setup up cron jobs
-(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${APP_PATH}/node-localjuicedb/getUntappd.js" ) | crontab -u ${USER} -
-(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${APP_PATH}/node-localjuicedb/getInstagram.js" ) | crontab -u ${USER} -
-(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${APP_PATH}/node-localjuicedb/getTwitter.js" ) | crontab -u ${USER} -
+(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${HOME}/node-localjuicedb/getUntappd.js" ) | crontab -u ${USER} -
+(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${HOME}/node-localjuicedb/getInstagram.js" ) | crontab -u ${USER} -
+(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${HOME}/node-localjuicedb/getTwitter.js" ) | crontab -u ${USER} -
 
 #mysql setup
-sudo mysql -e "UPDATE mysql.user SET Password = PASSWORD(${MYSQL_PASSWORD}) WHERE User = 'root'"
+sudo mysql -uroot -p${MYSQL_PASSWORD} -e "UPDATE mysql.user SET Password = PASSWORD('${MYSQL_PASSWORD}') WHERE User = 'root'"
 sudo mysql -uroot -p${MYSQL_PASSWORD} -e "CREATE DATABASE localjuicefeed;"
-echo "UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE user = 'root' AND plugin = 'unix_socket';FLUSH PRIVILEGES;" | sudo mysql -u root -p
+echo "UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE user = 'root' AND plugin = 'unix_socket';FLUSH PRIVILEGES;" | sudo mysql -u root -p{MYSQL_PASSWORD}
 
 ### create virtual host rules file
 echo "
@@ -40,12 +40,12 @@ echo "
       DocumentRoot /var/www/html/thejuicefeed
       ErrorLog ${APACHE_LOG_DIR}/error.log
       CustomLog ${APACHE_LOG_DIR}/access.log combined
-    </VirtualHost>" > '/etc/apache2/sites/available/thejuicefeed.com.conf'
+    </VirtualHost>" | sudo tee --append '/etc/apache2/sites-available/thejuicefeed.com.conf'
 echo -e $"\nNew Virtual Host Created\n"
 
 #enable and disable
-a2dissite 000-default
-a2ensite thejuicefeed.com
+sudo a2dissite 000-default
+sudo a2ensite thejuicefeed.com
 
 #restart apache2
-systemctl restart apache2 
+sudo systemctl restart apache2 
