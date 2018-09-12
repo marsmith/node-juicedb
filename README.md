@@ -17,8 +17,9 @@ Once you have successfully installed the OS, log in with user "pi" password "ras
 
 Run `sudo raspi-config` to set up:
 
-- wifi network (SSID and PSK)
-- localization options (ie. keyboard layout)
+- wifi network, optional (network options)
+- set keyboard layout (localization options)
+- set timezone (localization options)
 
 **Wireless config**:
 edit wireless setup file with `sudo nano /etc/network/interfaces` and add this to the bottom:
