@@ -179,7 +179,7 @@ exports.getUntappdMenu = function(venue) {
                 beerInfos.push(beerInfo);
 
             }).then(function(){
-                console.log('Found ' + beerInfos.length + ' items for ' + beerInfos[0].venueNameFull);
+                //console.log('Found ' + beerInfos.length + ' items for ' + beerInfos[0].venueNameFull);
         
                 async.each(beerInfos, function (beerInfo, callback) {
                         
@@ -261,7 +261,7 @@ exports.getUntappdMenu = function(venue) {
 
                     //the venue doesn't use indexes
                     else {
-                        console.log('THIS VENUE DOESNT USE INDEXES: ' + beerInfo.venueNameFull);
+                        //console.log('THIS VENUE DOESNT USE INDEXES: ' + beerInfo.venueNameFull);
 
                         var checkRecordsSQL = "SELECT * FROM `" + untappdTableName  + "` WHERE idx=" + beerInfo.index + " AND venue='" + beerInfo.venueNameFull + "' AND name='" + beerInfo.name + "'";
 
@@ -428,7 +428,7 @@ exports.getUntappdUser = function(user) {
                                     if (beerInfo.IBU === 'No') beerInfo.IBU = 'N/A';
                                     beerInfo.style = $('.top').find('.name').find('.style').text();
 
-                                    console.log('DATE',beerInfo.beertime)
+                                    //console.log('DATE',beerInfo.beertime)
                                     
                                     var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL) VALUES ('" + beerInfo.beertime + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "')";
             
@@ -578,7 +578,7 @@ exports.instagramByUser = function(user) {
                                         //if there are no hits, add it
                                         if (rows.length === 0) {
 
-                                            console.log("DATE",formatDate(item.date));
+                                            //console.log("DATE",formatDate(item.date));
     
                                             //write to database
                                             var insertPostSQL = "INSERT INTO `" + instagramTableName  + "` (beertime,user,venue,text,venueLogoURL,thumbnailURL,imageURL) VALUES ('" + formatDate(item.date) + "','" + item.user + "','" + item.venue + "','" + item.text + "','" + item.venueLogoURL + "','" + item.thumbnailURL + "','" + item.imageURL + "')";
@@ -704,7 +704,7 @@ exports.getTwitterByUser = function(user) {
 
                                 var insertTweetSQL = "INSERT INTO `" + twitterTableName  + "` (beertime,user,venue,text,userPhotoURL,imageURL) VALUES ('" + formatDate(new Date(tweet.time)) + "','" + tweet.screenName + "','" + profile.name + "','" + tweet.text.replace("'","").replace("'","") + "','" + profile.profileImage + "','" + tweet.images[0] + "')";
 
-                                console.log('SQL', insertTweetSQL)
+                                //console.log('SQL', insertTweetSQL)
 
                                 connection.query(insertTweetSQL, function(err, rows, fields){
                                     if(!err){
