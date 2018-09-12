@@ -54,3 +54,5 @@ static domain_name_servers=192.168.50.1
 
 ## Configure juicedb
 Edit config file and replace juice venue values as needed: `nano node-juicedb/config.js`
+
+check Cron with `crontab -e`.  The script should be automatically running every 15 minutes to pull new juice data.
