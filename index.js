@@ -33,7 +33,7 @@ var logger = createLogger({
         logFormat
     ),
     transports: [
-        new transports.Console(),
+        //new transports.Console(),
         new transports.File({ filename: 'combined.log' })
     ]
 });
@@ -677,11 +677,9 @@ exports.getTwitterByUser = function(user) {
             var twitterStream = new scrapetwitter.TimelineStream(user,{retweets:false,replies:false,count:numTweets});
 
             twitterStream.on('data', function(tweet) {
-                console.log('results',numTweets);
                 numTweets -=1;
                 tweetData.push(tweet);
                 //console.log(tweet);
-                //console.log(tweet.text,tweet.time,new Date(tweet.time).toLocaleString(), formatDate(new Date(tweet.time)));
             });
 
             twitterStream.on('end', function() {

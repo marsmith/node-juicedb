@@ -2,6 +2,7 @@
 
 #args
 MYSQL_PASSWORD='abc123'
+MYSQL_DATABASE='juicedb'
 LIST_OF_MAIN_APPS="git mariadb-client mariadb-server apache2 php7.0 php7.0-mysql libapache2-mod-php7.0 phpmyadmin"
 
 #universal script to install latest node.js on any raspberry pi version
@@ -23,13 +24,11 @@ npm install --prefix ${HOME}/node-juicedb
 sudo ln -s ${HOME}/thejuicefeed /var/www/html/thejuicefeed
 
 #setup up cron jobs
-(crontab -u ${USER} -l; echo "*/15 * * * * /usr/bin/node ${HOME}/node-juicedb/getUntappd.js" ) | crontab -u ${USER} -
-(crontab -u ${USER} -l; echo "*/15 * * * * /usr/bin/node ${HOME}/node-juicedb/getInstagram.js" ) | crontab -u ${USER} -
-(crontab -u ${USER} -l; echo "*/15 * * * * /usr/bin/node ${HOME}/node-juicedb/getTwitter.js" ) | crontab -u ${USER} -
+(crontab -u ${USER} -l; echo "*/15 * * * * /usr/bin/node ${HOME}/node-juicedb/getJuice.js" ) | crontab -u ${USER} -
 
 #mysql setup
 sudo mysql -uroot -p${MYSQL_PASSWORD} -e "UPDATE mysql.user SET Password = PASSWORD('${MYSQL_PASSWORD}') WHERE User = 'root'"
-sudo mysql -uroot -p${MYSQL_PASSWORD} -e "CREATE DATABASE localjuicefeed;"
+sudo mysql -uroot -p${MYSQL_PASSWORD} -e "CREATE DATABASE ${MYSQL_DATABASE};"
 echo "UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE user = 'root' AND plugin = 'unix_socket';FLUSH PRIVILEGES;" | sudo mysql -u root -p{MYSQL_PASSWORD}
 
 ### create virtual host rules file

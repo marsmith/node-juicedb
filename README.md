@@ -18,6 +18,7 @@ Once you have successfully installed the OS, log in with user "pi" password "ras
 Run `sudo raspi-config` to set up:
 
 - wifi network, optional (network options)
+- enable SSH for remote access (interface options)
 - set keyboard layout (localization options)
 - set timezone (localization options)
 
@@ -51,4 +52,5 @@ static domain_name_servers=192.168.50.1
 - get server setup script: `wget https://raw.githubusercontent.com/marsmith/node-juicedb/master/server-config/server-setup.sh`
 - run script: `sh server-setup.sh`
 
-
+## Configure juicedb
+Edit config file and replace juice venue values as needed: `nano node-juicedb/config.js`
