@@ -17,15 +17,15 @@ git clone https://github.com/marsmith/node-localjuicedb ${HOME}/node-juicedb
 git clone https://github.com/marsmith/thejuicefeed ${HOME}/thejuicefeed
 
 #install npm dependencies
-npm install --prefix ${HOME}/node-localjuicedb
+npm install --prefix ${HOME}/node-juicedb
 
 #create symbolic link
 sudo ln -s ${HOME}/thejuicefeed /var/www/html/thejuicefeed
 
 #setup up cron jobs
-(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${HOME}/node-localjuicedb/getUntappd.js" ) | crontab -u ${USER} -
-(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${HOME}/node-localjuicedb/getInstagram.js" ) | crontab -u ${USER} -
-(crontab -u ${USER} -l; echo "*/10 * * * * /usr/bin/node ${HOME}/node-localjuicedb/getTwitter.js" ) | crontab -u ${USER} -
+(crontab -u ${USER} -l; echo "*/15 * * * * /usr/bin/node ${HOME}/node-juicedb/getUntappd.js" ) | crontab -u ${USER} -
+(crontab -u ${USER} -l; echo "*/15 * * * * /usr/bin/node ${HOME}/node-juicedb/getInstagram.js" ) | crontab -u ${USER} -
+(crontab -u ${USER} -l; echo "*/15 * * * * /usr/bin/node ${HOME}/node-juicedb/getTwitter.js" ) | crontab -u ${USER} -
 
 #mysql setup
 sudo mysql -uroot -p${MYSQL_PASSWORD} -e "UPDATE mysql.user SET Password = PASSWORD('${MYSQL_PASSWORD}') WHERE User = 'root'"
