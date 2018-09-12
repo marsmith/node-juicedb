@@ -5,7 +5,7 @@ MYSQL_PASSWORD='abc123'
 LIST_OF_MAIN_APPS="git mariadb-client mariadb-server apache2 php7.0 php7.0-mysql libapache2-mod-php7.0 phpmyadmin"
 
 #universal script to install latest node.js on any raspberry pi version
-wget -O - https://raw.githubusercontent.com/audstanley/NodeJs-Raspberry-Pi/master/Install-Node.sh | sudo bash;
+wget -O - https://raw.githubusercontent.com/audstanley/NodeJs-Raspberry-Pi/master/Install-Node.sh | sudo bash
 
 #install apps
 sudo apt-get update  # To get the latest package lists
