@@ -1,6 +1,6 @@
 exports.data = {
     host: 'localhost',
     user: 'root',
-    password: '',
+    password: 'abc123',
     database: 'localjuicefeed'
 };
