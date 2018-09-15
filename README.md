@@ -21,6 +21,17 @@ Run `sudo raspi-config` to set up:
 - enable SSH for remote access (interface options)
 - set keyboard layout (localization options)
 - set timezone (localization options)
+- change default password
+
+Additional security measures:
+- Update all software: `sudo apt-get update` then `sudo apt-get upgrade`.
+- Add a new user, and delete default 'pi' user: `sudo adduser alice`.
+- To make new user part of the sudo group: `sudo adduser alice sudo`.
+- Delete 'pi' user: `sudo deluser -remove-home pi`.
+- Install firewall: `sudo apt-get install ufw`.
+- Reboot: `sudo reboot`.
+- Enable firewall: `sudo ufw enable`.
+- Allow access to ports: `sudo ufw allow 80`.
 
 **Wireless config**:
 edit wireless setup file with `sudo nano /etc/network/interfaces` and add this to the bottom:
