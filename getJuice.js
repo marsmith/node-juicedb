@@ -1,4 +1,4 @@
-var juice = require('./index');
+var juice = require('./app');
 var config = require('./config');
 
 //Instagram

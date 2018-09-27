@@ -5,15 +5,17 @@
   "authors": [
     "Martyn Smith <marsmith@usgs.gov>"
   ],
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node ./bin/www",
-    "devstart": "nodemon ./bin/www"
+    "start": "npm run open && npm run server",
+    "server": "node server.js",
+    "open": "start http://localhost:8080"
   },
   "dependencies": {
     "async": "^2.6.0",
     "bluebird": "3.5.1",
     "cheerio": "^1.0.0-rc.2",
+    "express": "^4.16.3",
     "mysql": "2.15.0",
     "promise-mysql": "3.2.1",
     "request": "^2.85.0",
