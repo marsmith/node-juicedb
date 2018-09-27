@@ -41,7 +41,7 @@ juice.cleanupTwitter().then(function(result){
     //loop over instagram users
     config.twitterUsers.forEach(function (item) {
         juice.getTwitterByUser(item).then(function(result){
-            console.log('Finished ' + item);
+            console.log('Finished twitter user: ' + item);
         })
         .catch(function(err){
             console.log('there was an error');
