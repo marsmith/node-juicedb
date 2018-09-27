@@ -3,9 +3,10 @@ var config = require('./config');
 
 //Instagram
 juice.cleanupInstagram().then(function(result){
+    console.log(result.result);
     config.instagramUsers.forEach(function (item) {
         juice.instagramByUser(item).then(function(result){
-            console.log('Finished ' + item);
+            console.log('Finished instagram user: ' + item);
         })
         .catch(function(err){
             console.log('there was an error');
@@ -15,7 +16,7 @@ juice.cleanupInstagram().then(function(result){
 
 //Untappd
 juice.cleanupUntappd().then(function(result){
-    console.log('RESULT: ' + result.result)
+    console.log(result.result);
     //then start loop
     config.untappdVenues.forEach(function (item) {
         juice.getUntappdMenu(item).then(function(result){
@@ -38,6 +39,7 @@ juice.cleanupUntappd().then(function(result){
 
 //Twitter
 juice.cleanupTwitter().then(function(result){
+    console.log(result.result);
     //loop over instagram users
     config.twitterUsers.forEach(function (item) {
         juice.getTwitterByUser(item).then(function(result){
