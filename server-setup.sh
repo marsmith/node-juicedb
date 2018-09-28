@@ -17,6 +17,7 @@ git clone https://github.com/marsmith/node-juicedb ${HOME}/node-juicedb
 
 #install npm dependencies
 npm install --prefix ${HOME}/node-juicedb
+npm audit fix --prefix ${HOME}/node-juicedb
 
 #setup up cron jobs
 (crontab -u ${USER} -l; echo "*/15 * * * * /usr/bin/node ${HOME}/node-juicedb/getJuice.js" ) | crontab -u ${USER} -

@@ -518,7 +518,7 @@ exports.instagramByUser = function(user) {
                         for (i = 0; i < numInstagramPosts; i++) { 
                             var post = edges[i];
 
-                            console.log("here:",post.node.edge_media_to_caption.edges[0].node.text, post.node)
+                            //console.log("here:",post.node.edge_media_to_caption.edges[0].node.text, post.node)
 
                             if (post.node.edge_media_to_caption.edges[0]) {
 

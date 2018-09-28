@@ -66,7 +66,7 @@ static domain_name_servers=192.168.50.1
 
 ## Setup software
 - get server setup script: `wget -O server-setup.py https://bit.ly/2NAFOFM`
-- run script: `sudo sh server-setup.sh`
+- run script: `sh server-setup.sh`
 
 ## Configure juicedb
 Edit config file and replace juice venue values as needed: `nano node-juicedb/config.js`
