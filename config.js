@@ -9,7 +9,7 @@ exports.untappdVenues = ['towne-tavern/63590','troy-discount-beverage/385265', '
 exports.untappdUsers = ['AlbanyAleandOyster','FranklinAlleySocialClub'];
 
 // FOR DEBUG
-//exports.instagramUsers = ['wearepintsized'];
-//exports.twitterUsers = [];
-//exports.untappdVenues = [];
-//exports.untappdUsers = [];
+// exports.instagramUsers = [];
+// exports.twitterUsers = ['burlingtonbeer'];
+// exports.untappdVenues = [];
+// exports.untappdUsers = [];

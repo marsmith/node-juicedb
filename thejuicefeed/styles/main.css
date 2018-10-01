@@ -11,6 +11,10 @@ html {
     flex-direction:row;
 } */
 
+.post-switcher:hover {
+    cursor:pointer;
+}
+
 #searchclear {
     position: absolute;
     right: 5px;

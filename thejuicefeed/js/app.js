@@ -29,43 +29,7 @@ $(document).ready(function () {
   });
 
   $("#viewToggle").on('click', function () {
-    if ($('#viewToggleText').text() === 'Map') {
-      //toggle views
-      $('#data').hide();
-      $('#map').show();
-
-      theMap.invalidateSize();
-
-      updateMap();    
-
-      //lastly toggle text
-      $('#viewToggleText').text('Feed');
-      $('#viewToggleIcon').removeClass('fa-map').addClass('fa-clipboard-list');
-      $('#appTitle').text('The Juice Map');
-    }
-    else {
-      $('#map').hide();
-      $('#data').show();
-      
-      //lastly toggle text
-      $('#viewToggleText').text('Map');
-      $('#viewToggleIcon').removeClass('fa-clipboard-list').addClass('fa-map');
-      $('#appTitle').text('The Juice Feed');
-    }
-  });
-
-  $('#data').on('click', '.untappd-img-top', function () {
-    var url = $(this).data('url');
-    var logo = $(this).data('venuelogo');
-    var venue = $(this).data('venue');
-    console.log('HERE',url)
-    $('#untappdModal').modal('show'); 
-    $('#untappdTitle').text(venue);
-    $('#untappdLogo').attr('src', logo);
-    $('#untappdIframe').attr("src", url ); 
-    //$("#untappdModal").height('100%');
-    $('#untappdIframe').attr("height", '98%');   
-    
+    toggleView();
   });
 
   $("#untappdRatingFilter").on("input focusout", function() {
@@ -91,18 +55,7 @@ $(document).ready(function () {
   });
 
   $('.venueToggles').on('change', "input[type='checkbox']", function (e) {
-    var venue = $(this).data('venue');
-    var checked = this.checked;
-    var type = $(this).parents().eq(1).attr('id').split('Div')[0];
-
-    console.log(venue,checked,type)
-
-    $('#data').find('.' + type + 'post').each(function (i, item) {
-      if ($(item).find('.' + type + 'venue').data('venue') === venue) {
-        if (checked) $(item).show();
-        else $(item).hide();
-      }
-    });
+    toggleVenues(this);
   });
 
   $('#searchString').keyup(function (e) {
@@ -118,32 +71,18 @@ $(document).ready(function () {
     resetSearch();
   });
 
-  //expand instagram text
-  $('#data').on('click', '.instagramvenue', function (e) {
+  //expand/collapse text
+  $('#data').on('click', '.expando-text', function (e) {
     $(this).toggleClass("expander");
   });
 
-  //show instagram image in modal
-  $('#data').on('click', '.instagramImage', function (e) {
-    $('#instaImage').attr('src', $(this).data('fullsizeimageurl'));
-    $('#instaText').text($(this).data('text'));
-    $('#instaTitle').text($(this).data('user'));
-    $('#instaLogo').attr('src', $(this).data('logo'));
-    $('#instagramModal').modal('show');
+  //show modal on click
+  $('#data').on('click', '.card-img-top', function (e) {
+    openModal($(this).parent().parent().attr('id'));
   });
 
-  //expand twitter text
-  $('#data').on('click', '.twittervenue', function (e) {
-    $(this).toggleClass("expander");
-  });
-
-  //show twitter image in modal
-  $('#data').on('click', '.twitterImage', function (e) {
-    $('#twitterImage').attr('src', $(this).data('fullsizeimageurl'));
-    $('#twitterText').text($(this).data('text'));
-    $('#twitterTitle').text($(this).data('user'));
-    $('#twitterLogo').attr('src', $(this).data('logo'));
-    $('#twitterModal').modal('show');
+  $('.post-switcher').on('click', function (e) {
+    openModal($(this).data('juiceid'));
   });
 
   //show filters modal
@@ -159,6 +98,91 @@ $(document).ready(function () {
   //refresh every 10 mins
   setInterval(function () { getJuice(); }, 600000);
 });
+
+function toggleView() {
+  if ($('#viewToggleText').text() === 'Map') {
+    //toggle views
+    $('#data').hide();
+    $('#map').show();
+
+    theMap.invalidateSize();
+
+    updateMap();    
+
+    //lastly toggle text
+    $('#viewToggleText').text('Feed');
+    $('#viewToggleIcon').removeClass('fa-map').addClass('fa-clipboard-list');
+    $('#appTitle').text('The Juice Map');
+  }
+  else {
+    $('#map').hide();
+    $('#data').show();
+    
+    //lastly toggle text
+    $('#viewToggleText').text('Map');
+    $('#viewToggleIcon').removeClass('fa-clipboard-list').addClass('fa-map');
+    $('#appTitle').text('The Juice Feed');
+  }
+}
+
+function toggleVenues(data) {
+  var venue = $(data).data('venue');
+  var checked = data.checked;
+  var type = $(data).parents().eq(1).attr('id').split('Div')[0];
+
+  $('#data').find('.' + type + 'post').each(function (i, item) {
+    if ($(item).find('.' + type + 'venue').data('venue') === venue) {
+      if (checked) $(item).show();
+      else $(item).hide();
+    }
+  });
+}
+
+function myfunction(el,d) {
+  alert("you swiped on element with id '"+el+"' to "+d+" direction");
+}
+
+function openModal(id) {
+
+  var data = $('#' + id).find('.card-img-top');
+  var postID = parseInt(id.split('-')[1]);
+  //console.log('postID:',id,data);
+
+  //check if this is an untappd item click
+  if ($(data).attr('class').indexOf('untappd-img-top') != -1) {
+    $('#unifiedBodyTop').html('<iframe src="' + $(data).data('url') + '" id="untappdIframe" style="zoom:0.60" frameborder="0" width="99.6%"></iframe>'); 
+    $('#untappdIframe').attr("height", $('#unifiedModal').height());   
+  }
+
+  //otherwise assume instagram or twitter
+  else {
+    $('#unifiedBodyTop').html('<img class="card-img-top" src="' + $(data).data('fullsizeimageurl') + '" id="unifiedImage"></img>');
+  }
+  
+  $('#unifiedTitle').text($(data).data('venue'));
+  $('#unifiedLogo').attr('src', $(data).data('logo'));
+
+  //check for parent visibility (due to filter)
+  var text = '<p>' + $('#' + id).find('.modal-text').html() + '</p>';
+  if (!$(data).parent().parent().is(":visible")) text+='<b>THIS POST IS HIDDEN DUE TO RATINGS FILTER</b>';
+  $('#unifiedBodyBottom').html(text);
+
+  $('#unifiedFooter').html('<small class="time" data-time="' + $(data).data('time') + '"> Posted: ' + timeSince(new Date($(data).data('time'))) + ' ago</small>');
+  
+  $('#unifiedModal').modal('show'); 
+
+  //set arrows to next post
+  $('#previousPost').data('juiceid','juiceIndex-' + (postID-1));
+  $('#nextPost').data('juiceid','juiceIndex-' + (postID+1));
+
+  //handle swipes
+  $("#unifiedModal").swipe( {
+    swipe:function(event, direction, distance, duration, fingerCount, fingerData) {
+      if (direction == 'left') openModal('juiceIndex-' + (postID+1));
+      if (direction == 'right') openModal('juiceIndex-' + (postID-1));
+    }
+  });
+}
 
 function updateMap() {
   //console.log('in updateMap');
@@ -307,7 +331,6 @@ function filterByUntappdRating(filterValue) {
 
 function getJuice() {
 
-  //get log file cross domain using YQL
   $.ajax({
     type: "GET",
     url: "../juice",
@@ -315,42 +338,46 @@ function getJuice() {
       console.log('response:',data);
 
       var result = data;
-
+      
       //if (result.length > 0) {
 
         $('#data').empty();
 
         $.each(result, function (index, value) {
+          console.log('now parsing:', index);
+
           if (index === 'instagram') {
             $.each(value, function (index, post) {
               //console.log('insta',post);
-  
+
+              //add toggle to filter modal
               if ($('#instagramDiv').find('.instagram-toggle').text().indexOf(post.venue) === -1) {
                 $('#instagramDiv').append('<div class="ml-2 instagram-toggle custom-control custom-checkbox"><input type="checkbox" class="custom-control-input" id="instaCheck' + index + '" data-venue="' + post.user + '" checked><label class="custom-control-label" for="instaCheck' + index + '">' + post.venue + '</label></div>');
               }
+
+              //linkify hashtags and ats in post text
+              var newText = post.text.replace(/#(\w+)/g, "<a href='https://instagram.com/tags/$1' target='_blank'>$&</a>").replace(/@(\w+)/g, "<a href='https://instagram.com/$1' target='_blank'>$&</a>");
   
               //create post
-              var postContent = '<div class="juicepost instagrampost col-6 col-md-4 col-lg-2 mt-4"> <div class="card"> <img class="instagramImage card-img-top" data-src="' + post.thumbnailURL + '" data-fullSizeImageURL="' + post.imageURL + '" data-text="' + post.text + '" data-user="' + post.user + '" data-logo="' + post.venueLogoURL + '"> <div class="card-block"> <user class="profile">	<img src="' + post.venueLogoURL + '" class="profile-avatar" alt=""> </user>  <div class="expander instagramvenue meta mt-3" data-venue="' + post.user + '"> ' + post.text + '</div> <div class="card-text"><a href="https://www.instagram.com/' + post.user + '" target="_blank">' + post.venue + '</a></div> </div> <div class="card-footer">	<small class="time" data-time="' + post.beertime + '"> Posted: ' + timeSince(new Date(post.beertime)) + ' ago</small> </div>	</div> </div>';
+              var postContent = '<div class="juicepost instagrampost col-6 col-md-4 col-lg-2 mt-4"> <div class="card"> <img class="instagramImage card-img-top" data-src="' + post.thumbnailURL + '" data-fullSizeImageURL="' + post.imageURL + '" data-venue="' + post.user + '" data-logo="' + post.venueLogoURL + '" data-time="' + post.beertime + '"> <div class="card-block"> <user class="profile">	<img src="' + post.venueLogoURL + '" class="profile-avatar" alt=""> </user>  <div class="expander expando-text modal-text mt-3" data-venue="' + post.user + '"> ' + newText  + '</div> <div class="card-text"><a href="https://www.instagram.com/' + post.user + '" target="_blank">' + post.venue + '</a></div> </div> <div class="card-footer">	<small class="time" data-time="' + post.beertime + '"> Posted: ' + timeSince(new Date(post.beertime)) + ' ago</small> </div>	</div> </div>';
   
-              $('#data').append(postContent);
+              $('#data').append($(postContent));
   
             });
           }
 
           if (index === 'twitter') {
             $.each(value, function (index, post) {
-              console.log('twitter',post.imageURL);
+              //console.log('twitter',post.imageURL);
 
               if (post.imageURL == 'undefined') post.imageURL = post.userPhotoURL;
   
               if ($('#twitterDiv').find('.twitter-toggle').text().indexOf(post.venue) === -1) {
                 $('#twitterDiv').append('<div class="ml-2 twitter-toggle custom-control custom-checkbox"><input type="checkbox" class="custom-control-input" id="twitterCheck' + index + '" data-venue="' + post.user + '" checked><label class="custom-control-label" for="twitterCheck' + index + '">' + post.venue + '</label></div>');
               }
-
-              console.log()
   
               //create post
-              var postContent = '<div class="juicepost twitterpost col-6 col-md-4 col-lg-2 mt-4"> <div class="card"> <img class="twitterImage card-img-top" data-src="' + post.imageURL + '" data-fullSizeImageURL="' + post.imageURL + '" data-text="' + post.text + '" data-user="' + post.user + '" data-logo="' + post.userPhotoURL + '"> <div class="card-block"> <user class="profile">	<img data-src="' + post.userPhotoURL + '" class="profile-avatar" alt=""> </user>  <div class="expander twittervenue meta mt-3" data-venue="' + post.user + '"> ' + post.text + '</div> <div class="card-text"><a href="https://www.twitter.com/' + post.user + '" target="_blank">' + post.venue + '</a></div> </div> <div class="card-footer">	<small class="time" data-time="' + post.beertime + '"> Posted: ' + timeSince(new Date(post.beertime)) + ' ago</small> </div>	</div> </div>';
+              var postContent = '<div class="juicepost twitterpost col-6 col-md-4 col-lg-2 mt-4"> <div class="card"> <img class="twitterImage card-img-top" data-src="' + post.imageURL + '" data-fullSizeImageURL="' + post.imageURL + '" data-venue="' + post.user + '" data-logo="' + post.userPhotoURL + '" data-time="' + post.beertime + '"> <div class="card-block"> <user class="profile">	<img data-src="' + post.userPhotoURL + '" class="profile-avatar" alt=""> </user>  <div class="expander expando-text mt-3" data-venue="' + post.user + '"> ' + post.text + '</div> <div class="card-text"><a href="https://www.twitter.com/' + post.user + '" target="_blank">' + post.venue + '</a></div> </div> <div class="card-footer">	<small class="time" data-time="' + post.beertime + '"> Posted: ' + timeSince(new Date(post.beertime)) + ' ago</small> </div>	</div> </div>';
   
               $('#data').append(postContent);
   
@@ -359,7 +386,6 @@ function getJuice() {
   
           if (index === 'untappd') {
             $.each(value, function (index, post) {
-  
               //console.log('untappd',post);
   
               if ($('#untappdDiv').find('.untappd-toggle').text().indexOf(post.venue) === -1) {
@@ -380,17 +406,25 @@ function getJuice() {
                 display = 'style="display:none;"';
               }
   
-              //<a href="' + post.beerUntappdURL + '" target="_blank"></a>
+              post.text = $('<div id="beerInfo" class="meta"><div id="beerBrewery"> ' + post.brewery + '</div> <div id="beerStyle"> ' + post.style + '</div> <div id="beerABVIBU"> ' + post.ABV + ' ABV • ' + post.IBU + ' IBU</div> <div id="beerPrice"> ' + post.prices.replace(/USD/g, '').split('|').join(' </br> ') + '</div> </div>').text();
   
               //create post
-              var postContent = '<div ' + display + ' class="juicepost untappdpost col-6 col-md-4 col-lg-2 mt-4"> <div class="card"> <img class="untappd-img-top" data-src="' + post.beerLogoURL + '" data-url="' + post.beerUntappdURL + '" data-venue="' + post.venue + '" data-venuelogo="' + post.venueUntappdLogoURL + '"> <div class="card-block"> <venue class="profile untappdvenue" data-venue="' + post.venue + '">	<img src="' + post.venueUntappdLogoURL + '"  class="profile-avatar" alt=""> </venue> <h5 class="card-title mt-3"><a href="' + post.beerUntappdURL + '" target="_blank"><span id="beerName">' + post.name + '</span></a><span class="badge badge-warning rating ml-2">' + post.rating + '</span></h5> <div id="beerInfo"><div id="beerBrewery" class="meta"> ' + post.brewery + '</div> <div id="beerStyle" class="meta"> ' + post.style + '</div> <div class="meta"> ' + post.ABV + ' ABV • ' + post.IBU + ' IBU</div> </div> <div class="meta"> ' + post.prices.replace(/USD/g, '').split('|').join(' </br> ') + '</div><div class="card-text"><a href="' + post.venueUntappdURL + '" target="_blank">' + post.venue + '</a></div> </div> <div class="card-footer">	<small class="time" data-time="' + post.beertime + '"> Posted: ' + timeSince(new Date(post.beertime)) + ' ago</small> </div>	</div> </div>';
+              var postContent = '<div ' + display + ' class="juicepost untappdpost col-6 col-md-4 col-lg-2 mt-4"> <div class="card"> <img class="untappd-img-top card-img-top" data-src="' + post.beerLogoURL + '" data-url="' + post.beerUntappdURL + '" data-venue="' + post.venue + '" data-logo="' + post.venueUntappdLogoURL + '" data-time="' + post.beertime + '"><div class="card-block"> <venue class="profile untappdvenue" data-venue="' + post.venue + '">	<img src="' + post.venueUntappdLogoURL + '"  class="profile-avatar" alt=""> </venue> <h5 class="card-title mt-3"><a href="' + post.beerUntappdURL + '" target="_blank"><span id="beerName">' + post.name + '</span></a><span class="badge badge-warning rating ml-2">' + post.rating + '</span></h5><div class="modal-text" id="beerInfo"><div id="beerBrewery"> ' + post.brewery + '</div> <div id="beerStyle"> ' + post.style + '</div> <div id="beerABVIBU"> ' + post.ABV + ' ABV • ' + post.IBU + ' IBU</div> <div id="beerPrice"> ' + post.prices.replace(/USD/g, '').split('|').join(' </br> ') + '</div> </div><div class="card-text"><a href="' + post.venueUntappdURL + '" target="_blank">' + post.venue + '</a></div> </div> <div class="card-footer">	<small class="time" data-time="' + post.beertime + '"> Posted: ' + timeSince(new Date(post.beertime)) + ' ago</small> </div>	</div> </div>';
   
               $('#data').append(postContent);
             });
           }
         });
   
+        //sort posts by date
         $('#data .juicepost').sort(sortDescending).appendTo('#data');
+
+        //append IDs to date-ordered posts
+        var postID = 0;
+        $(".juicepost").each(function(){ 
+          postID +=1;
+          $(this).attr('id','juiceIndex-' + postID);
+        });
 
         //update lazy loader after everything is done
         ll.update();

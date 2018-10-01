@@ -133,7 +133,7 @@ exports.getUntappdMenu = function(venue) {
                 var $beerDetailsH6 = $(beer).find('.beer-details').find('h6');
                 
                 //check for beers that dont have a number in first 3 characters
-                if ($beerDetailsH5.find('a').text().substring(0, 3).indexOf('.') != -1) {
+                if ($beerDetailsH5.find('a').text().substring(0, 3).indexOf('.') != -1 && !isNaN($beerDetailsH5.find('a').text().charAt(0))) {
                     beerInfo.name = $beerDetailsH5.find('a').text().split('.')[1].trim().replace("'","");
                     beerInfo.index = parseInt($beerDetailsH5.find('a').text().split('.')[0]);
                 }
@@ -158,6 +158,8 @@ exports.getUntappdMenu = function(venue) {
                 });
                 beerInfo.prices = prices.join('|');
                 beerInfos.push(beerInfo);
+
+                //console.log("BEER INDEX:",beerInfo.index,beerInfo.name)
 
             }).then(function(){
                 //console.log('Found ' + beerInfos.length + ' items for ' + beerInfos[0].venueNameFull);
@@ -299,7 +301,6 @@ exports.getUntappdMenu = function(venue) {
                             }
                         });
 
-                        //callback(null);
                     }
     
                 }, function(err){
@@ -518,9 +519,9 @@ exports.instagramByUser = function(user) {
                         for (i = 0; i < numInstagramPosts; i++) { 
                             var post = edges[i];
 
-                            //console.log("here:",post.node.edge_media_to_caption.edges[0].node.text, post.node)
+                            console.log("post:",venue)
 
-                            if (post.node.edge_media_to_caption.edges[0]) {
+                            if (post && post.node.edge_media_to_caption.edges[0]) {
 
                                 //clean up hashtags and mentions from text
                                 var regexp1 = /\#\w\w+\s?/g;
@@ -684,6 +685,7 @@ exports.getTwitterByUser = function(user) {
                     //exit loop if tweet is greater than days to expire
                     if (daysToExpire - daysBetween(todayDate,tweetDate) < 0) {
                         console.log("Skipping old tweet from:", tweet.screenName);
+                        callback(null);
                         return;
                     }
 
