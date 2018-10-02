@@ -6,6 +6,7 @@ var featureCollection = {
 };
 var sitesLayer;
 var ll;
+var postCount = 0;
 
 //main document ready function
 $(document).ready(function () {
@@ -136,12 +137,34 @@ function toggleVenues(data) {
   });
 }
 
+function getNextVisiblePost(id,direction) {
+  var postID = parseInt(id.split('-')[1]);
+  var nextPostID,visible;
+
+  //return original post if were at the beginning or end
+  if (postID+1 > postCount || postID-1 < 1) return 'juiceIndex-' + postID;
+
+  if (direction === 'right') {
+    nextPostID = 'juiceIndex-' + (postID+1);
+    visible = $('#' + nextPostID).find('.card-img-top').parent().parent().is(":visible");
+    if (visible) return nextPostID;
+    else return getNextVisiblePost(nextPostID,direction);
+  }
+  if (direction === 'left') {
+    nextPostID = 'juiceIndex-' + (postID-1);
+    visible = $('#' + nextPostID).find('.card-img-top').parent().parent().is(":visible");
+    if (visible) return nextPostID;
+    else return getNextVisiblePost(nextPostID,direction);
+  }
+ 
+}
+
 function openModal(id) {
 
   var data = $('#' + id).find('.card-img-top');
   var visible = $(data).parent().parent().is(":visible");
   var postID = parseInt(id.split('-')[1]);
-  console.log('TEST:','#' + id, $(data).attr('class'));
+  //console.log('openModal:',id,visible,postID);
 
   //check if this is an untappd item click
   if ($(data).attr('class').indexOf('untappd-img-top') != -1) {
@@ -166,15 +189,18 @@ function openModal(id) {
   
   $('#unifiedModal').modal('show'); 
 
+  var nextLeftPostID = getNextVisiblePost(id,'left');
+  var nextRightPostID = getNextVisiblePost(id,'right');
+
   //bind arrow key listerners
   $("#unifiedModal").off('keydown').on('keydown', function(e) {
     switch(e.which) {
         case 37: // left
-        openModal('juiceIndex-' + (postID-1));
+        openModal(nextLeftPostID);
         break;
 
         case 39: // right
-        openModal('juiceIndex-' + (postID+1));
+        openModal(nextRightPostID);
         break;
 
         default: return; // exit this handler for other keys
@@ -184,19 +210,19 @@ function openModal(id) {
 
   //add chevron click listeners
   $('#previousPost').off('click').on('click', function (e) { 
-    openModal('juiceIndex-' + (postID-1));
+    openModal(nextLeftPostID);
   });
   $('#nextPost').off('click').on('click', function (e) {
-    openModal('juiceIndex-' + (postID+1));
+    openModal(nextRightPostID);
   });
 
   //add touch swipe listeners
   $("#unifiedModal").swipe( {
     swipeRight: function(event, direction, distance, duration, fingerCount, fingerData) {
-      openModal('juiceIndex-' + (postID-1));
+      openModal(nextLeftPostID);
     },
     swipeLeft: function(event, direction, distance, duration, fingerCount, fingerData) {
-      openModal('juiceIndex-' + (postID+1));
+      openModal(nextRightPostID);
     }, allowPageScroll: "vertical",
   });
 }
@@ -437,10 +463,9 @@ function getJuice() {
         $('#data .juicepost').sort(sortDescending).appendTo('#data');
 
         //append IDs to date-ordered posts
-        var postID = 0;
         $(".juicepost").each(function(){ 
-          postID +=1;
-          $(this).attr('id','juiceIndex-' + postID);
+          postCount +=1;
+          $(this).attr('id','juiceIndex-' + postCount);
         });
 
         //update lazy loader after everything is done
