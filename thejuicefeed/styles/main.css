@@ -7,10 +7,6 @@ html {
     height: calc(100% - 49.25px); width: 100%; position: absolute !important; 
 }
 
-/* .navbar-nav {
-    flex-direction:row;
-} */
-
 .post-switcher:hover {
     cursor:pointer;
 }

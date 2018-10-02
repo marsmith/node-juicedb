@@ -81,10 +81,6 @@ $(document).ready(function () {
     openModal($(this).parent().parent().attr('id'));
   });
 
-  $('.post-switcher').on('click', function (e) {
-    openModal($(this).data('juiceid'));
-  });
-
   //show filters modal
   $('#filterToggle').on('click', function () {
     $('#filterModal').modal('show');
@@ -130,6 +126,8 @@ function toggleVenues(data) {
   var checked = data.checked;
   var type = $(data).parents().eq(1).attr('id').split('Div')[0];
 
+  console.log(venue,checked,type)
+
   $('#data').find('.' + type + 'post').each(function (i, item) {
     if ($(item).find('.' + type + 'venue').data('venue') === venue) {
       if (checked) $(item).show();
@@ -145,6 +143,7 @@ function myfunction(el,d) {
 function openModal(id) {
 
   var data = $('#' + id).find('.card-img-top');
+  var visible = $(data).parent().parent().is(":visible");
   var postID = parseInt(id.split('-')[1]);
   //console.log('postID:',id,data);
 
@@ -164,7 +163,7 @@ function openModal(id) {
 
   //check for parent visibility (due to filter)
   var text = '<p>' + $('#' + id).find('.modal-text').html() + '</p>';
-  if (!$(data).parent().parent().is(":visible")) text+='<b>THIS POST IS HIDDEN DUE TO RATINGS FILTER</b>';
+  if (!visible) text+='<b>THIS POST IS HIDDEN DUE TO RATINGS FILTER</b>';
   $('#unifiedBodyBottom').html(text);
 
   $('#unifiedFooter').html('<small class="time" data-time="' + $(data).data('time') + '"> Posted: ' + timeSince(new Date($(data).data('time'))) + ' ago</small>');
@@ -172,15 +171,21 @@ function openModal(id) {
   $('#unifiedModal').modal('show'); 
 
   //set arrows to next post
-  $('#previousPost').data('juiceid','juiceIndex-' + (postID-1));
-  $('#nextPost').data('juiceid','juiceIndex-' + (postID+1));
+  $('#previousPost').on('click', function (e) { 
+    openModal('juiceIndex-' + (postID-1));
+  });
+  $('#nextPost').on('click', function (e) {
+    openModal('juiceIndex-' + (postID+1));
+  });
 
   //handle swipes
   $("#unifiedModal").swipe( {
-    swipe:function(event, direction, distance, duration, fingerCount, fingerData) {
-      if (direction == 'left') openModal('juiceIndex-' + (postID+1));
-      if (direction == 'right') openModal('juiceIndex-' + (postID-1));
-    }, allowPageScroll: "vertical"
+    swipeRight: function(event, direction, distance, duration, fingerCount, fingerData) {
+      openModal('juiceIndex-' + (postID-1));
+    },
+    swipeLeft: function(event, direction, distance, duration, fingerCount, fingerData) {
+      openModal('juiceIndex-' + (postID+1));
+    }, allowPageScroll: "vertical",
   });
 }
 
@@ -359,7 +364,7 @@ function getJuice() {
               var newText = post.text.replace(/#(\w+)/g, "<a href='https://instagram.com/tags/$1' target='_blank'>$&</a>").replace(/@(\w+)/g, "<a href='https://instagram.com/$1' target='_blank'>$&</a>");
   
               //create post
-              var postContent = '<div class="juicepost instagrampost col-6 col-md-4 col-lg-2 mt-4"> <div class="card"> <img class="instagramImage card-img-top" data-src="' + post.thumbnailURL + '" data-fullSizeImageURL="' + post.imageURL + '" data-venue="' + post.user + '" data-logo="' + post.venueLogoURL + '" data-time="' + post.beertime + '"> <div class="card-block"> <user class="profile">	<img src="' + post.venueLogoURL + '" class="profile-avatar" alt=""> </user>  <div class="expander expando-text modal-text mt-3" data-venue="' + post.user + '"> ' + newText  + '</div> <div class="card-text"><a href="https://www.instagram.com/' + post.user + '" target="_blank">' + post.venue + '</a></div> </div> <div class="card-footer">	<small class="time" data-time="' + post.beertime + '"> Posted: ' + timeSince(new Date(post.beertime)) + ' ago</small> </div>	</div> </div>';
+              var postContent = '<div class="juicepost instagrampost col-6 col-md-4 col-lg-2 mt-4"> <div class="card"> <img class="instagramImage card-img-top" data-src="' + post.thumbnailURL + '" data-fullSizeImageURL="' + post.imageURL + '" data-venue="' + post.user + '" data-logo="' + post.venueLogoURL + '" data-time="' + post.beertime + '"> <div class="card-block"> <user class="profile">	<img src="' + post.venueLogoURL + '" class="profile-avatar" alt=""> </user>  <div class="expander instagramvenue expando-text modal-text mt-3" data-venue="' + post.user + '"> ' + newText  + '</div> <div class="card-text"><a href="https://www.instagram.com/' + post.user + '" target="_blank">' + post.venue + '</a></div> </div> <div class="card-footer">	<small class="time" data-time="' + post.beertime + '"> Posted: ' + timeSince(new Date(post.beertime)) + ' ago</small> </div>	</div> </div>';
   
               $('#data').append($(postContent));
   
@@ -377,7 +382,7 @@ function getJuice() {
               }
   
               //create post
-              var postContent = '<div class="juicepost twitterpost col-6 col-md-4 col-lg-2 mt-4"> <div class="card"> <img class="twitterImage card-img-top" data-src="' + post.imageURL + '" data-fullSizeImageURL="' + post.imageURL + '" data-venue="' + post.user + '" data-logo="' + post.userPhotoURL + '" data-time="' + post.beertime + '"> <div class="card-block"> <user class="profile">	<img data-src="' + post.userPhotoURL + '" class="profile-avatar" alt=""> </user>  <div class="expander expando-text mt-3" data-venue="' + post.user + '"> ' + post.text + '</div> <div class="card-text"><a href="https://www.twitter.com/' + post.user + '" target="_blank">' + post.venue + '</a></div> </div> <div class="card-footer">	<small class="time" data-time="' + post.beertime + '"> Posted: ' + timeSince(new Date(post.beertime)) + ' ago</small> </div>	</div> </div>';
+              var postContent = '<div class="juicepost twitterpost col-6 col-md-4 col-lg-2 mt-4"> <div class="card"> <img class="twitterImage card-img-top" data-src="' + post.imageURL + '" data-fullSizeImageURL="' + post.imageURL + '" data-venue="' + post.user + '" data-logo="' + post.userPhotoURL + '" data-time="' + post.beertime + '"> <div class="card-block"> <user class="profile">	<img data-src="' + post.userPhotoURL + '" class="profile-avatar" alt=""> </user>  <div class="expander expando-text twittervenue modal-text mt-3" data-venue="' + post.user + '"> ' + post.text + '</div> <div class="card-text"><a href="https://www.twitter.com/' + post.user + '" target="_blank">' + post.venue + '</a></div> </div> <div class="card-footer">	<small class="time" data-time="' + post.beertime + '"> Posted: ' + timeSince(new Date(post.beertime)) + ' ago</small> </div>	</div> </div>';
   
               $('#data').append(postContent);
   
