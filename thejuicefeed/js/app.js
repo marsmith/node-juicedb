@@ -162,9 +162,6 @@ function getNextVisiblePost(id,direction) {
 function openModal(id) {
 
   var data = $('#' + id).find('.card-img-top');
-  var visible = $(data).parent().parent().is(":visible");
-  var postID = parseInt(id.split('-')[1]);
-  //console.log('openModal:',id,visible,postID);
 
   //check if this is an untappd item click
   if ($(data).attr('class').indexOf('untappd-img-top') != -1) {
@@ -179,14 +176,8 @@ function openModal(id) {
   
   $('#unifiedTitle').text($(data).data('venue'));
   $('#unifiedLogo').attr('src', $(data).data('logo'));
-
-  //check for parent visibility (due to filter)
-  var text = '<p>' + $('#' + id).find('.modal-text').html() + '</p>';
-  if (!visible) text+='<b>THIS POST IS HIDDEN DUE TO RATINGS FILTER</b>';
-  $('#unifiedBodyBottom').html(text);
-
+  $('#unifiedBodyBottom').html('<p>' + $('#' + id).find('.modal-text').html() + '</p>');
   $('#unifiedFooter').html('<small class="time" data-time="' + $(data).data('time') + '"> Posted: ' + timeSince(new Date($(data).data('time'))) + ' ago</small>');
-  
   $('#unifiedModal').modal('show'); 
 
   var nextLeftPostID = getNextVisiblePost(id,'left');
@@ -217,13 +208,14 @@ function openModal(id) {
   });
 
   //add touch swipe listeners
-  $("#unifiedModal").swipe( {
+  $("#unifiedModal").swipe({
     swipeRight: function(event, direction, distance, duration, fingerCount, fingerData) {
       openModal(nextLeftPostID);
     },
     swipeLeft: function(event, direction, distance, duration, fingerCount, fingerData) {
       openModal(nextRightPostID);
-    }, allowPageScroll: "vertical",
+    }, 
+    allowPageScroll: "vertical",
   });
 }
 
