@@ -136,16 +136,12 @@ function toggleVenues(data) {
   });
 }
 
-function myfunction(el,d) {
-  alert("you swiped on element with id '"+el+"' to "+d+" direction");
-}
-
 function openModal(id) {
 
   var data = $('#' + id).find('.card-img-top');
   var visible = $(data).parent().parent().is(":visible");
   var postID = parseInt(id.split('-')[1]);
-  //console.log('postID:',id,data);
+  console.log('TEST:','#' + id, $(data).attr('class'));
 
   //check if this is an untappd item click
   if ($(data).attr('class').indexOf('untappd-img-top') != -1) {
@@ -170,15 +166,31 @@ function openModal(id) {
   
   $('#unifiedModal').modal('show'); 
 
-  //set arrows to next post
-  $('#previousPost').on('click', function (e) { 
+  //bind arrow key listerners
+  $("#unifiedModal").off('keydown').on('keydown', function(e) {
+    switch(e.which) {
+        case 37: // left
+        openModal('juiceIndex-' + (postID-1));
+        break;
+
+        case 39: // right
+        openModal('juiceIndex-' + (postID+1));
+        break;
+
+        default: return; // exit this handler for other keys
+    }
+    e.preventDefault(); // prevent the default action (scroll / move caret)
+  });
+
+  //add chevron click listeners
+  $('#previousPost').off('click').on('click', function (e) { 
     openModal('juiceIndex-' + (postID-1));
   });
-  $('#nextPost').on('click', function (e) {
+  $('#nextPost').off('click').on('click', function (e) {
     openModal('juiceIndex-' + (postID+1));
   });
 
-  //handle swipes
+  //add touch swipe listeners
   $("#unifiedModal").swipe( {
     swipeRight: function(event, direction, distance, duration, fingerCount, fingerData) {
       openModal('juiceIndex-' + (postID-1));
