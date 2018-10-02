@@ -180,7 +180,7 @@ function openModal(id) {
     swipe:function(event, direction, distance, duration, fingerCount, fingerData) {
       if (direction == 'left') openModal('juiceIndex-' + (postID+1));
       if (direction == 'right') openModal('juiceIndex-' + (postID-1));
-    }
+    }, allowPageScroll: "vertical"
   });
 }
 
