@@ -137,26 +137,29 @@ function toggleVenues(data) {
   });
 }
 
-function getNextVisiblePost(id,direction) {
+function getNeighborPost(id,direction) {
   var postID = parseInt(id.split('-')[1]);
   var nextPostID,visible;
+  //console.log('getVisiblePost',id,direction)
 
-  //return original post if were at the beginning or end
-  if (postID+1 > postCount || postID-1 < 1) return 'juiceIndex-' + postID;
-
-  if (direction === 'right') {
+  if (direction === 'next') {
+    //were at the end
+    if (postID === postCount) return id;
     nextPostID = 'juiceIndex-' + (postID+1);
     visible = $('#' + nextPostID).find('.card-img-top').parent().parent().is(":visible");
+    
     if (visible) return nextPostID;
-    else return getNextVisiblePost(nextPostID,direction);
+    else return getNeighborPost(nextPostID,direction);
   }
-  if (direction === 'left') {
+  if (direction === 'previous') {
+    //were at the beginning
+    if (postID === 1) return id;
     nextPostID = 'juiceIndex-' + (postID-1);
     visible = $('#' + nextPostID).find('.card-img-top').parent().parent().is(":visible");
+      
     if (visible) return nextPostID;
-    else return getNextVisiblePost(nextPostID,direction);
+    else return getNeighborPost(nextPostID,direction);
   }
- 
 }
 
 function openModal(id) {
@@ -180,18 +183,19 @@ function openModal(id) {
   $('#unifiedFooter').html('<small class="time" data-time="' + $(data).data('time') + '"> Posted: ' + timeSince(new Date($(data).data('time'))) + ' ago</small>');
   $('#unifiedModal').modal('show'); 
 
-  var nextLeftPostID = getNextVisiblePost(id,'left');
-  var nextRightPostID = getNextVisiblePost(id,'right');
+  var previousPostID = getNeighborPost(id,'previous');
+  var nextPostID = getNeighborPost(id,'next');
+  console.log('previous post:',previousPostID,'current post:',id,'next post:',nextPostID)
 
   //bind arrow key listerners
   $("#unifiedModal").off('keydown').on('keydown', function(e) {
     switch(e.which) {
         case 37: // left
-        openModal(nextLeftPostID);
+        openModal(previousPostID);
         break;
 
         case 39: // right
-        openModal(nextRightPostID);
+        openModal(nextPostID);
         break;
 
         default: return; // exit this handler for other keys
@@ -201,19 +205,19 @@ function openModal(id) {
 
   //add chevron click listeners
   $('#previousPost').off('click').on('click', function (e) { 
-    openModal(nextLeftPostID);
+    openModal(previousPostID);
   });
   $('#nextPost').off('click').on('click', function (e) {
-    openModal(nextRightPostID);
+    openModal(nextPostID);
   });
 
   //add touch swipe listeners
   $("#unifiedModal").swipe({
     swipeRight: function(event, direction, distance, duration, fingerCount, fingerData) {
-      openModal(nextLeftPostID);
+      openModal(previousPostID);
     },
     swipeLeft: function(event, direction, distance, duration, fingerCount, fingerData) {
-      openModal(nextRightPostID);
+      openModal(nextPostID);
     }, 
     allowPageScroll: "vertical",
   });
