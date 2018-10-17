@@ -32,7 +32,7 @@ app.get('/', (req, res) => {
 // Retrieve all juicefeed infos
 app.get('/juice', function (req, res) {
 	var pool = mysql.createPool(dbInfo.data);
-    var untappdQuery = "SELECT * FROM untappd WHERE beertime > NOW() - INTERVAL 3 DAY";
+    var untappdQuery = "SELECT * FROM untappd WHERE beertime > NOW() - INTERVAL 14 DAY";
 	var instagramQuery = "SELECT * FROM instagram WHERE beertime > NOW() - INTERVAL 3 DAY";
 	var twitterQuery = "SELECT * FROM twitter WHERE beertime > NOW() - INTERVAL 3 DAY";
 
