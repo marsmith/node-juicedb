@@ -258,7 +258,9 @@ exports.getUntappdMenu = function(venue) {
             
                                 //query didn't find anything so we need to add a beer
                                 if (rows.length === 0) {
-                                    var date = new Date().toLocaleString();
+                                    var date = new Date();
+                                    console.log('IM HERE',date.toLocaleDateString());
+
                                     console.log('Need to add this beer (venue doesnt use index): ' + date);
                                     // + ' | ' +  beerInfo.index + ' | ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
                     
