@@ -245,21 +245,21 @@ exports.getUntappdMenu = function(venue) {
 
                     //the venue doesn't use indexes
                     else {
-                        console.log('THIS VENUE DOESNT USE INDEXES: ' + beerInfo.index);
+                        console.log('THIS VENUE DOESNT USE INDEXES: ' + beerInfo.venueNameFull);
 
                         var checkRecordsSQL = "SELECT * FROM `" + untappdTableName  + "` WHERE idx=" + beerInfo.index + " AND venue='" + beerInfo.venueNameFull + "' AND name='" + beerInfo.name + "'";
 
-                        console.log('check records SQL: ' + checkRecordsSQL);
+                        //console.log('check records SQL: ' + checkRecordsSQL);
     
                         connection.query(checkRecordsSQL, function(err, rows, fields){
                             if(!err){
 
-                                //console.log(JSON.stringify(rows.length));
+                                console.log(JSON.stringify(rows.length));
             
                                 //query didn't find anything so we need to add a beer
                                 if (rows.length === 0) {
 
-                                    console.log('Need to add this beer (venue doesnt use index): ' + beerInfo.venueNameFull + ' | ' | + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                                    console.log('Need to add this beer (venue doesnt use index): ' + beerInfo.index + ' | ' |beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
                     
                                     var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL,venueAddress) VALUES ('" + new Date().toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "','" + beerInfo.venueAddress + "')";
                     
