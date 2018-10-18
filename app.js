@@ -254,7 +254,7 @@ exports.getUntappdMenu = function(venue) {
                         connection.query(checkRecordsSQL, function(err, rows, fields){
                             if(!err){
 
-                                console.log('rows: ' + JSON.stringify(rows.length));
+                                console.log('rows: ' + JSON.stringify(rows));
             
                                 //query didn't find anything so we need to add a beer
                                 if (rows.length === 0) {
