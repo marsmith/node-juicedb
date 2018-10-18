@@ -255,7 +255,7 @@ exports.getUntappdMenu = function(venue) {
                         connection.query(checkRecordsSQL, function(err, rows, fields){
                             if(!err){
 
-                                console.log('rows: ' + JSON.stringify(rows));
+                                console.log('rows: ' + JSON.stringify(rows), JSON.stringify(fields));
             
                                 //query didn't find anything so we need to add a beer
                                 if (rows.length === 0) {
@@ -267,7 +267,7 @@ exports.getUntappdMenu = function(venue) {
                     
                                     var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL,venueAddress) VALUES ('" + date.toLocaleString() + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "','" + beerInfo.venueAddress + "')";
                     
-                                    //console.log('SQL: ' + insertBeerSQL);
+                                    console.log('SQL: ' + insertBeerSQL);
 
                                     // connection.query(insertBeerSQL, function(err, rows, fields){
                                     //     if(!err){
