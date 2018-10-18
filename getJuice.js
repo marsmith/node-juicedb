@@ -18,14 +18,14 @@ juice.cleanupInstagram().then(function(result){
 juice.cleanupUntappd().then(function(result){
     console.log(result.result);
     //then start loop
-    // config.untappdVenues.forEach(function (item) {
-    //     juice.getUntappdMenu(item).then(function(result){
-    //         console.log('Finished untapped venue: ' + item);
-    //     })
-    //     .catch(function(err){
-    //         console.log('there was an error');
-    //     });
-    // });
+    config.untappdVenues.forEach(function (item) {
+        juice.getUntappdMenu(item).then(function(result){
+            console.log('Finished untapped venue: ' + item);
+        })
+        .catch(function(err){
+            console.log('there was an error');
+        });
+    });
 
     config.untappdUsers.forEach(function (item) {
         juice.getUntappdUser(item).then(function(result){

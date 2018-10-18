@@ -269,16 +269,16 @@ exports.getUntappdMenu = function(venue) {
                     
                                     //console.log('SQL: ' + insertBeerSQL);
 
-                                    connection.query(insertBeerSQL, function(err, rows, fields){
-                                        if(!err){
-                                            console.log("Added untappd item111: " + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
-                                            callback(null);
-                                        } else {
-                                            console.log("Error while performing untappd venue query (no indicies): "  + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
-                                            console.log("ERROR:",err)
-                                            callback(err);
-                                        }
-                                    });
+                                    // connection.query(insertBeerSQL, function(err, rows, fields){
+                                    //     if(!err){
+                                    //         console.log("Added untappd item111: " + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                                    //         callback(null);
+                                    //     } else {
+                                    //         console.log("Error while performing untappd venue query (no indicies): "  + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                                    //         console.log("ERROR:",err)
+                                    //         callback(err);
+                                    //     }
+                                    // });
                                 
                                 }
                                 //this beer at this index needs to be updated
