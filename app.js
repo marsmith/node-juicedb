@@ -249,12 +249,12 @@ exports.getUntappdMenu = function(venue) {
 
                         var checkRecordsSQL = "SELECT * FROM `" + untappdTableName  + "` WHERE idx=" + beerInfo.index + " AND venue='" + beerInfo.venueNameFull + "' AND name='" + beerInfo.name + "'";
 
-                        //console.log('check records SQL: ' + checkRecordsSQL);
+                        console.log('check records SQL: ' + checkRecordsSQL);
     
                         connection.query(checkRecordsSQL, function(err, rows, fields){
                             if(!err){
 
-                                console.log(JSON.stringify(rows.length));
+                                //console.log(JSON.stringify(rows.length));
             
                                 //query didn't find anything so we need to add a beer
                                 if (rows.length === 0) {
