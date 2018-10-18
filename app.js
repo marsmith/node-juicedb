@@ -254,7 +254,7 @@ exports.getUntappdMenu = function(venue) {
                         connection.query(checkRecordsSQL, function(err, rows, fields){
                             if(!err){
 
-                                //console.log(JSON.stringify(rows.length));
+                                console.log('rows: ' + JSON.stringify(rows.length));
             
                                 //query didn't find anything so we need to add a beer
                                 if (rows.length === 0) {
@@ -267,7 +267,7 @@ exports.getUntappdMenu = function(venue) {
 
                                     connection.query(insertBeerSQL, function(err, rows, fields){
                                         if(!err){
-                                            console.log("Added untappd item: " + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                                            console.log("Added untappd item111: " + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
                                             callback(null);
                                         } else {
                                             console.log("Error while performing untappd venue query (no indicies): "  + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
