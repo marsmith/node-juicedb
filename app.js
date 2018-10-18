@@ -255,12 +255,12 @@ exports.getUntappdMenu = function(venue) {
                         connection.query(checkRecordsSQL, function(err, rows, fields){
                             if(!err){
 
-                                console.log('rows: ' + JSON.stringify(rows), JSON.stringify(fields));
+                                console.log('rows: ' + JSON.stringify(rows));
             
                                 //query didn't find anything so we need to add a beer
                                 if (rows.length === 0) {
                                     var date = new Date();
-                                    console.log('IM HERE',date.toLocaleDateString());
+                                    console.log('IM HERE',date);
 
                                     //console.log('Need to add this beer (venue doesnt use index): ' + date);
                                     // + ' | ' +  beerInfo.index + ' | ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
