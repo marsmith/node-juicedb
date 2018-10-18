@@ -60,7 +60,8 @@ exports.cleanupUntappd = function() {
 
         //cleanup old records
         //var cleanupSQL = "DELETE FROM `" + untappdTableName  + "` WHERE beertime < NOW() - INTERVAL " + daysToExpire + " DAY";
-        var cleanupSQL = "DELETE * FROM `" + untappdTableName  + "` WHERE venue=`Hill Street Cafe`";
+        var venue = 'Hill Street Cafe';
+        var cleanupSQL = "DELETE * FROM `" + untappdTableName  + "` WHERE venue=`" + venue + "`";
 
         Database.execute( dbInfo.data,
             //first query checks if database exists if not creates it
