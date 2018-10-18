@@ -59,8 +59,7 @@ exports.cleanupUntappd = function() {
         var createTableSQL = "CREATE TABLE IF NOT EXISTS `" + untappdTableName  + "` (uid INT NOT NULL AUTO_INCREMENT PRIMARY KEY,beertime DATETIME,venue TEXT(100),idx INT,name VARCHAR(100),brewery TEXT(100),style TEXT(100),ABV TEXT(10),IBU TEXT(10),rating TEXT(10),prices TEXT(100),beerLogoURL TEXT(100),beerUntappdURL TEXT(100),venueUntappdURL TEXT(100),venueUntappdLogoURL TEXT(100),venueAddress TEXT(100))";
 
         //cleanup old records
-        //var cleanupSQL = "DELETE FROM `" + untappdTableName  + "` WHERE beertime < NOW() - INTERVAL " + daysToExpire + " DAY";
-        var cleanupSQL = "DELETE FROM `" + untappdTableName  + "` WHERE venue='Hill Street Cafe'";
+        var cleanupSQL = "DELETE FROM `" + untappdTableName  + "` WHERE beertime < NOW() - INTERVAL " + daysToExpire + " DAY";
 
         Database.execute( dbInfo.data,
             //first query checks if database exists if not creates it
@@ -246,32 +245,29 @@ exports.getUntappdMenu = function(venue) {
 
                     //the venue doesn't use indexes
                     else {
-                        console.log('THIS VENUE DOESNT USE INDEXES: ' + beerInfo.venueNameFull);
+                        //console.log('THIS VENUE DOESNT USE INDEXES: ' + beerInfo.venueNameFull);
 
                         var checkRecordsSQL = "SELECT * FROM `" + untappdTableName  + "` WHERE idx=" + beerInfo.index + " AND venue='" + beerInfo.venueNameFull + "' AND name='" + beerInfo.name + "'";
 
-                        console.log('check records SQL: ' + checkRecordsSQL);
+                        //console.log('check records SQL: ' + checkRecordsSQL);
     
                         connection.query(checkRecordsSQL, function(err, rows, fields){
                             if(!err){
 
-                                console.log('rows: ' + JSON.stringify(rows));
+                                //console.log(JSON.stringify(rows.length));
             
                                 //query didn't find anything so we need to add a beer
                                 if (rows.length === 0) {
-                                    var date = new Date();
-                                    console.log('IM HERE',beerInfo.beertime);
 
-                                    //console.log('Need to add this beer (venue doesnt use index): ' + date);
-                                    // + ' | ' +  beerInfo.index + ' | ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                                    console.log('Need to add this beer (venue doesnt use index): ' + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
                     
                                     var insertBeerSQL = "INSERT INTO `" + untappdTableName  + "` (beertime,venue,idx,name,brewery,style,ABV,IBU,rating,prices,beerLogoURL,beerUntappdURL,venueUntappdURL,venueUntappdLogoURL,venueAddress) VALUES ('" + beerInfo.beertime + "','" + beerInfo.venueNameFull + "','" + beerInfo.index + "','" + beerInfo.name + "','" + beerInfo.brewery + "','" + beerInfo.style + "','" + beerInfo.ABV + "','" + beerInfo.IBU + "','" + beerInfo.rating + "','" + beerInfo.prices + "','" + beerInfo.beerLogoURL + "','" + beerInfo.beerUntappdURL + "','" + beerInfo.venueUntappdURL + "','" + beerInfo.venueUntappdLogoURL  + "','" + beerInfo.venueAddress + "')";
                     
-                                    console.log('SQL: ' + insertBeerSQL);
+                                    //console.log('SQL: ' + insertBeerSQL);
 
                                     connection.query(insertBeerSQL, function(err, rows, fields){
                                         if(!err){
-                                            console.log("Added untappd item111: " + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
+                                            console.log("Added untappd item: " + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
                                             callback(null);
                                         } else {
                                             console.log("Error while performing untappd venue query (no indicies): "  + beerInfo.venueNameFull + ' | ' + beerInfo.brewery + ' | ' + beerInfo.name);
