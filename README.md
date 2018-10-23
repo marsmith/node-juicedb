@@ -1,6 +1,6 @@
-# LAMP+node.js stack on raspbian
+# node.js/express stack on raspbian
 
-The following info is a guide to setting up a basic lamp stack on a raspberry pi, including node.js and git
+The following info is a guide to setting up a basic node/express web server on a raspberry pi
 
 ## Requirements
 
