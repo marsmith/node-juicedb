@@ -1,6 +1,8 @@
-# node.js/express stack on raspbian
+# juicefeed
 
-The following info is a guide to setting up a basic node/express web server on a raspberry pi
+The following info is a guide to setting up a basic node.js/express web server on a raspberry pi.  A database will be created and populated with juice data from a cron script run every 15 minutes.  Additionally, an express server will be installed that hosts a static web page (Juice Feed) which queries the aforementioned database for juice infos and displays chronologically sorted, filterable info cards.
+
+![Screen Shot](https://image.ibb.co/nqrZOA/Capture.png)
 
 ## Requirements
 
