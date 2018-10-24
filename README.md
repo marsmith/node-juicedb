@@ -4,8 +4,8 @@ The following info is a guide to setting up a basic node/express web server on a
 
 ## Requirements
 
-- HARDWARE: (raspberry pi microSD card, micro USB power supply, HDMI cable, monitor, keyboard).  Monitor and keyboard only necessary for initial setup.
-- SOFTWARE: Rasbian OS image (tesed using **June 2018** release) [here](https://www.raspberrypi.org/downloads/raspbian/)
+- **Hardware**: (raspberry pi microSD card, micro USB power supply, HDMI cable, monitor, keyboard).  Monitor and keyboard only necessary for initial setup.
+- **Software**: Rasbian OS image (tesed using **June 2018** release) [here](https://www.raspberrypi.org/downloads/raspbian/)
 
 ## Install raspbian
 
@@ -18,7 +18,7 @@ Follow steps from raspbian installation guide [here](https://www.raspberrypi.org
 
 ## Configure raspbian
 
-Once you have successfully installed the OS, log in with user "pi" password "raspberry"
+Once you have successfully installed the OS, log in with default user credentials: user `pi` password `raspberry`
 
 Run `sudo raspi-config` to run raspberry pi config wizard:
 
@@ -62,7 +62,8 @@ static routers=192.168.50.1
 static domain_name_servers=192.168.50.1
 ```
 
-**reboot after any networking change:** `sudo reboot`
+**reboot after any networking change:**  
+`sudo reboot`
 
 ## Setup software
 - get server setup script: `wget -O server-setup.py https://bit.ly/2NAFOFM`
