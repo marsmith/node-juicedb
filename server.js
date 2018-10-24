@@ -4,7 +4,7 @@ var mysql      = require('mysql');
 var async      = require('async');
 var path       = require('path');
 var bodyParser = require("body-parser");
-var dbInfo     = require('./dbInfo.js')
+var dbInfo     = require('./dbInfo.js');
 
 // Constants
 var PORT = 8080;
