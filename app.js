@@ -157,7 +157,14 @@ exports.getUntappdMenu = function(venue) {
                     prices.push($(item).text().trim());
                 });
                 beerInfo.prices = prices.join('|');
-                beerInfos.push(beerInfo);
+
+                //check if there are multiple beers at a single index on menu.  Happens at the ruck where ciders have same index as beers.  Need to find better fix than skipping
+                var alreadyHave = false;
+                beerInfos.forEach(function (item) {
+                    if (item.index === beerInfo.index) alreadyHave = true;
+                });
+
+                if (!alreadyHave) beerInfos.push(beerInfo);
 
                 //console.log("BEER INDEX:",beerInfo.index,beerInfo.name)
 

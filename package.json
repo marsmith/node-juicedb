@@ -1,7 +1,7 @@
 {
-  "name": "node-localjuicedb",
+  "name": "juicefeed",
   "version": "0.0.0",
-  "repository": "https://github.com/marsmith/node-localjuicedb",
+  "repository": "https://github.com/marsmith/juicefeed",
   "authors": [
     "Martyn Smith <marsmith@usgs.gov>"
   ],
@@ -15,11 +15,8 @@
     "async": "^2.6.0",
     "bluebird": "3.5.1",
     "cheerio": "^1.0.0-rc.2",
-    "chromeless": "^1.5.2",
     "express": "^4.16.3",
-    "fs": "0.0.1-security",
     "mysql": "2.15.0",
-    "promise-mysql": "3.2.1",
     "request": "^2.85.0",
     "request-promise": "^4.2.2",
     "scrape-twitter": "^0.11.0"
