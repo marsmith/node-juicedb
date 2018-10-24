@@ -22,7 +22,7 @@ app.use(function(req, res, next) {
 });
 
 //define static path for hosting html/JS site
-app.use(express.static(__dirname + '/thejuicefeed'));
+app.use(express.static(__dirname + '/www'));
 
 //forward paths from route
 app.get('/', (req, res) => {
